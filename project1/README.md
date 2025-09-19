@@ -1,13 +1,13 @@
 # Project Deliverables Checklist
 
 ## Task 1: Dataset Analysis and Insights
-- [ ] `data_analysis.py` — Python script for data processing, metrics calculation, and visualizations
-- [ ] Screenshots of bar charts, heatmaps, and scatter plots
-- [ ] Screenshots must display **date and time** to capture data processing and calculations
+- [x] `data_analysis.py` — Python script for data processing, metrics calculation, and visualizations
+- [x] Screenshots of bar charts, heatmaps, and scatter plots
+- [x] Screenshots must display **date and time** to capture data processing and calculations
 
 ## Task 2: Docker Containerization
-- [ ] `Dockerfile`
-- [ ] Screenshots with date and time visible demonstrating:
+- [x] `Dockerfile`
+- [x] Screenshots with date and time visible demonstrating:
   - Docker containers run locally and process data
   - Docker image pushed to Docker Hub or local registry
   - Docker container deployment simulated via Docker Compose or Minikube
