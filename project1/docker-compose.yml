@@ -1,0 +1,6 @@
+services:
+  diet-analysis:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: diet-analysis
