@@ -13,12 +13,12 @@
   - Docker container deployment simulated via Docker Compose or Minikube
 
 ## Task 3: Serverless Function & Cloud Storage Simulation
-- [ ] Serverless function code (e.g., `lambda_function.py`) demonstrating Azure Blob Storage access via Azurite
-- [ ] Screenshots with date and time visible showing:
+- [x] Serverless function code (e.g., `lambda_function.py`) demonstrating Azure Blob Storage access via Azurite
+- [x] Screenshots with date and time visible showing:
   - Azurite Blob Storage running and `All_Diets.csv` uploaded
   - Function running locally and processing data from Azurite
   - Results saved in your simulated NoSQL storage (JSON file, MongoDB, etc.)
-- [ ] Explanation of how you simulated cloud storage with Azurite and the serverless processing workflow
+- [x] Explanation of how you simulated cloud storage with Azurite and the serverless processing workflow
 
 ## Task 4: CI/CD Pipeline
 - [ ] CI/CD config file: `.github/workflows/deploy.yml`
