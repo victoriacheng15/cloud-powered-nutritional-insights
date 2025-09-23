@@ -21,12 +21,12 @@
 - [x] Explanation of how you simulated cloud storage with Azurite and the serverless processing workflow
 
 ## Task 4: CI/CD Pipeline
-- [ ] CI/CD config file: `.github/workflows/deploy.yml`
-- [ ] Screenshots of GitHub Actions with date and time visible run logs showing successful build/test
-- [ ] Evidence of simulated deployment (e.g., running container output)
+- [x] CI/CD config file: `.github/workflows/deploy.yml`
+- [x] Screenshots of GitHub Actions with date and time visible run logs showing successful build/test
+- [x] Evidence of simulated deployment (e.g., running container output)
 
 ## Task 5: Enhancement Report
-- [ ] A 1-page report explaining:
+- [x] A 1-page report explaining:
   - Which two options you chose
   - What research you conducted
   - The improvements you applied
