@@ -17,6 +17,7 @@ FUNCTION_APP_URL = os.getenv("FUNCTION_APP_URL", "http://localhost:7071")
 # Azure Function App Key - for authentication
 FUNCTION_APP_KEY = os.getenv("FUNCTION_APP_KEY", "")
 
+
 @app.route("/")
 def index():
     return render_template("index.html")

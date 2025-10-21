@@ -23,10 +23,10 @@ def http_nutritional_insights(req: func.HttpRequest) -> func.HttpResponse:
     try:
         diet_type = req.params.get("diet_type", "all")
         result = get_nutritional_insights(diet_type)
-        return func.HttpResponse(json.dumps(result), status_code=200, mimetype="application/json")
+        return func.HttpResponse(
+            json.dumps(result), status_code=200, mimetype="application/json"
+        )
     except Exception as e:
         return func.HttpResponse(
-            json.dumps({"error": str(e)}),
-            status_code=500,
-            mimetype="application/json"
+            json.dumps({"error": str(e)}), status_code=500, mimetype="application/json"
         )
