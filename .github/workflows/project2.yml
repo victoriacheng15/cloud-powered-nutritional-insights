@@ -1,0 +1,26 @@
+name: Project 2 CI/CD
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'project2/**'
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5.0.0
+      
+      - name: Set up Python
+        uses: actions/setup-python@v6.0.0
+        with:
+          python-version: '3.12'
+      
+      - name: Install ruff
+        run: pip install ruff
+      
+      - name: Format check with ruff
+        working-directory: ./project2
+        run: ruff format --check .

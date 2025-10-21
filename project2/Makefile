@@ -1,4 +1,4 @@
-.PHONY: help install run dev clean docker-build docker-run
+.PHONY: help freeze install format run dev clean docker-build docker-run
 
 help:
 	@echo "Available commands:"
@@ -18,6 +18,9 @@ install:
 
 run:
 	python3 app.py
+
+format:
+	ruff format .
 
 dev:
 	export FLASK_ENV=development && export FLASK_APP=app.py && flask run
