@@ -1,7 +1,7 @@
-import requests
 import os
 from flask import Flask, render_template, request, jsonify
 from dotenv import load_dotenv
+from utils import proxy_to_function_app
 
 # Load environment variables from .env file
 load_dotenv()
@@ -17,38 +17,29 @@ FUNCTION_APP_URL = os.getenv("FUNCTION_APP_URL", "http://localhost:7071")
 # Azure Function App Key - for authentication
 FUNCTION_APP_KEY = os.getenv("FUNCTION_APP_KEY", "")
 
+
 @app.route("/")
 def index():
     return render_template("index.html")
 
 
 @app.route("/api/greeting")
+@proxy_to_function_app
 def get_greeting():
     """
     Proxy endpoint to call Azure Function App greeting
     """
-    try:
-        name = request.args.get("name", "World")
-        url = f"{FUNCTION_APP_URL}/api/hello?name={name}"
-        
-        # Add function key if available
-        if FUNCTION_APP_KEY:
-            url += f"&code={FUNCTION_APP_KEY}"
-        
-        response = requests.get(url, timeout=10)
-        
-        if response.status_code != 200:
-            return {"error": f"Function App returned {response.status_code}: {response.text}"}, 500
-            
-        return response.json()
-    except Exception as e:
-        return {"error": str(e)}, 500
+    pass
 
 
-@app.route("/api/data")
-def get_data():
-    # Placeholder for API endpoint
-    return {"status": "success", "message": "API endpoint working"}
+@app.route("/api/nutritional-insights")
+@proxy_to_function_app
+def get_nutritional_insights():
+    """
+    Proxy endpoint to call Azure Function App nutritional insights
+    Returns aggregated nutritional statistics for a diet type
+    """
+    pass
 
 
 if __name__ == "__main__":
