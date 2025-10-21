@@ -1,12 +1,21 @@
-from flask import Flask, render_template, request, jsonify
 import requests
 import os
+from flask import Flask, render_template, request, jsonify
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = Flask(__name__)
 
+# Environment
+FLASK_ENV = os.getenv("FLASK_ENV", "development")
+app.debug = FLASK_ENV == "development"
+
 # Azure Function App URL - use environment variable with fallback to localhost
 FUNCTION_APP_URL = os.getenv("FUNCTION_APP_URL", "http://localhost:7071")
-
+# Azure Function App Key - for authentication
+FUNCTION_APP_KEY = os.getenv("FUNCTION_APP_KEY", "")
 
 @app.route("/")
 def index():
@@ -20,7 +29,17 @@ def get_greeting():
     """
     try:
         name = request.args.get("name", "World")
-        response = requests.get(f"{FUNCTION_APP_URL}/api/hello?name={name}")
+        url = f"{FUNCTION_APP_URL}/api/hello?name={name}"
+        
+        # Add function key if available
+        if FUNCTION_APP_KEY:
+            url += f"&code={FUNCTION_APP_KEY}"
+        
+        response = requests.get(url, timeout=10)
+        
+        if response.status_code != 200:
+            return {"error": f"Function App returned {response.status_code}: {response.text}"}, 500
+            
         return response.json()
     except Exception as e:
         return {"error": str(e)}, 500
