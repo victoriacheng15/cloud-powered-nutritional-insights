@@ -2,17 +2,17 @@ from flask import Flask, render_template
 
 app = Flask(__name__)
 
-@app.route('/')
-def index():
-    return render_template('index.html')
 
-@app.route('/api/data')
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+
+@app.route("/api/data")
 def get_data():
     # Placeholder for API endpoint
-    return {
-        'status': 'success',
-        'message': 'API endpoint working'
-    }
+    return {"status": "success", "message": "API endpoint working"}
 
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+
+if __name__ == "__main__":
+    app.run(debug=True, host="0.0.0.0", port=5000)
