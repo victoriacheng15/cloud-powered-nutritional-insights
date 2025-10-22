@@ -2,7 +2,7 @@ import json
 from datetime import datetime
 
 
-def hello(name=None):
+def greeting(name=None):
     """
     Hello world function
     """
