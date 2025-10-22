@@ -1,17 +1,17 @@
 import azure.functions as func
 import json
-from functions import hello, get_nutritional_insights
+from functions import greeting, get_nutritional_insights
 
 app = func.FunctionApp()
 
 
-@app.route(route="hello")
-def http_hello(req: func.HttpRequest) -> func.HttpResponse:
+@app.route(route="greeting")
+def http_greeting(req: func.HttpRequest) -> func.HttpResponse:
     """
-    HTTP triggered function that calls hello function
+    HTTP triggered function that calls greeting function
     """
     name = req.params.get("name")
-    result = hello(name)
+    result = greeting(name)
     return func.HttpResponse(str(result), status_code=200)
 
 

@@ -17,6 +17,16 @@ FUNCTION_APP_URL = os.getenv("FUNCTION_APP_URL", "http://localhost:7071")
 # Azure Function App Key - for authentication
 FUNCTION_APP_KEY = os.getenv("FUNCTION_APP_KEY", "")
 
+# Determine if we should use function key (only in production)
+function_key = FUNCTION_APP_KEY if FLASK_ENV == "production" else None
+function_url = (
+    FUNCTION_APP_URL if FLASK_ENV == "production" else "http://localhost:7071"
+)
+
+print(f"🔧 FLASK_ENV: {FLASK_ENV}")
+print(f"🔧 FUNCTION_APP_URL: {function_url}")
+print(f"🔧 Debug mode: {app.debug}")
+
 
 @app.route("/")
 def index():
@@ -24,7 +34,7 @@ def index():
 
 
 @app.route("/api/greeting")
-@proxy_to_function_app
+@proxy_to_function_app(function_url, function_key)
 def get_greeting():
     """
     Proxy endpoint to call Azure Function App greeting
@@ -33,7 +43,7 @@ def get_greeting():
 
 
 @app.route("/api/nutritional-insights")
-@proxy_to_function_app
+@proxy_to_function_app(function_url, function_key)
 def get_nutritional_insights():
     """
     Proxy endpoint to call Azure Function App nutritional insights

@@ -15,9 +15,8 @@ def get_nutritional_insights(diet_type="all"):
         Dictionary with aggregated nutritional statistics
     """
     try:
-        # Get the path to the CSV file
-        # The function app runs from project2/api, so we need to go up to project2
-        csv_path = Path(__file__).parent.parent.parent / "datasets" / "All_Diets.csv"
+        # Get the path to the CSV file inside the function app folder
+        csv_path = Path(__file__).parent / "datasets" / "All_Diets.csv"
 
         # Read the CSV
         df = pd.read_csv(csv_path)
