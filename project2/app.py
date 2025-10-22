@@ -48,6 +48,12 @@ def get_nutritional_insights():
     """
     Proxy endpoint to call Azure Function App nutritional insights
     Returns aggregated nutritional statistics for a diet type
+
+    Query Parameters:
+        - diet_type: (optional) "all", "vegan", "keto", "mediterranean", "paleo", or "dash"
+                     Defaults to "all" if not provided
+
+    Example: /api/nutritional-insights?diet_type=keto
     """
     pass
 
