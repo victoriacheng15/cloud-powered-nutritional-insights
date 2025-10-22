@@ -356,6 +356,9 @@
         // Test greeting endpoint
         await getGreeting();
 
+        // Load default nutritional insights on page load
+        await getNutritionalInsights('all');
+
         // Get the "Get Nutritional Insights" button by finding button with matching text
         const buttons = document.querySelectorAll('button');
         const insightsButton = Array.from(buttons).find(btn => btn.textContent.includes('Get Nutritional Insights'));
