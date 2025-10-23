@@ -38,6 +38,6 @@ jobs:
       - name: Install Biome
         run: npm install -g @biomejs/biome
       
-      - name: Format check with Biome (JavaScript)
+      - name: Format, lint, and check with Biome (JavaScript)
         working-directory: ./project2
-        run: biome format --check "**/*.js"
+        run: biome check --check static/ api/functions/ app.py

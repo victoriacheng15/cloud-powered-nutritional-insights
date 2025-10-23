@@ -76,5 +76,22 @@ def get_recipes():
     pass
 
 
+@app.route("/api/clusters")
+@proxy_to_function_app(function_url, function_key)
+def get_clusters():
+    """
+    Proxy endpoint to call Azure Function App clusters
+    Returns nutritional clusters for recipes
+
+    Query Parameters:
+        - diet_type: (optional) "all", "vegan", "keto", "mediterranean", "paleo", or "dash"
+                     Defaults to "all" if not provided
+        - num_clusters: (optional) Number of clusters to create, defaults to 3 (max 20)
+
+    Example: /api/clusters?diet_type=keto&num_clusters=4
+    """
+    pass
+
+
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
