@@ -355,13 +355,13 @@
     function displayRecipes(data) {
         // Get or create container for recipes
         let recipesContainer = document.getElementById('recipes-container');
-        
+
         if (!recipesContainer) {
             recipesContainer = document.createElement('section');
             recipesContainer.id = 'recipes-container';
             recipesContainer.className = 'mb-8';
             recipesContainer.innerHTML = '<h2 class="text-2xl font-semibold mb-4">Recipes</h2>';
-            
+
             // Insert after the API Data Interaction section
             const apiSection = document.querySelector('section:has(button:nth-of-type(1))');
             if (apiSection && apiSection.nextSibling) {
@@ -441,7 +441,7 @@
         // Create pagination controls
         const paginationDiv = document.createElement('div');
         paginationDiv.className = 'flex justify-center gap-2 mt-4';
-        
+
         // Previous button
         const prevBtn = document.createElement('button');
         prevBtn.textContent = 'Previous';
@@ -458,7 +458,7 @@
         const maxPagesToShow = 5;
         let startPage = Math.max(1, data.page - Math.floor(maxPagesToShow / 2));
         let endPage = Math.min(data.total_pages, startPage + maxPagesToShow - 1);
-        
+
         // Adjust startPage if we're near the end
         if (endPage - startPage + 1 < maxPagesToShow) {
             startPage = Math.max(1, endPage - maxPagesToShow + 1);
@@ -488,8 +488,8 @@
         for (let i = startPage; i <= endPage; i++) {
             const pageBtn = document.createElement('button');
             pageBtn.textContent = i;
-            pageBtn.className = i === data.page 
-                ? 'px-3 py-1 bg-blue-600 text-white rounded' 
+            pageBtn.className = i === data.page
+                ? 'px-3 py-1 bg-blue-600 text-white rounded'
                 : 'px-3 py-1 bg-gray-300 rounded hover:bg-gray-400';
             pageBtn.onclick = async () => {
                 const dietTypeSelect = document.querySelector('select');
@@ -540,10 +540,10 @@
             const response = await fetch(`/api/recipes?diet_type=${dietType}&page=${page}&page_size=${pageSize}`);
             const data = await response.json();
             console.log(`Recipes for ${dietType} (page ${page}):`, data);
-            
+
             // Display the recipes
             displayRecipes(data);
-            
+
             return data;
         } catch (error) {
             console.error('Error fetching recipes:', error);
@@ -577,7 +577,7 @@
 
         // Get the "Get Recipes" button
         const recipesButton = Array.from(buttons).find(btn => btn.textContent.includes('Get Recipes'));
-        
+
         if (recipesButton) {
             recipesButton.addEventListener('click', async function () {
                 // Get selected diet type from dropdown

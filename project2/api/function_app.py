@@ -36,7 +36,7 @@ def http_nutritional_insights(req: func.HttpRequest) -> func.HttpResponse:
 def http_recipes(req: func.HttpRequest) -> func.HttpResponse:
     """
     HTTP triggered function that returns recipes filtered by diet type with pagination
-    
+
     Query Parameters:
         - diet_type: (optional) "all", "vegan", "keto", "mediterranean", "paleo", or "dash"
                      Defaults to "all" if not provided
