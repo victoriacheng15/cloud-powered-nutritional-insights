@@ -8,7 +8,7 @@ on:
       - 'project2/**'
 
 jobs:
-  format:
+  python-format:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5.0.0
@@ -24,3 +24,20 @@ jobs:
       - name: Format check with ruff
         working-directory: ./project2
         run: ruff format --check .
+  
+  js-format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5.0.0
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v6.0.0
+        with:
+          node-version: '22'
+      
+      - name: Install Biome
+        run: npm install -g @biomejs/biome
+      
+      - name: Format check with Biome (JavaScript)
+        working-directory: ./project2
+        run: biome format --check "**/*.js"
