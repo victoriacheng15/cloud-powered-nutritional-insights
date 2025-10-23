@@ -1,8 +1,28 @@
+import os
 import pandas as pd
 from pathlib import Path
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 import json
+
+
+def load_dataset(filename="All_Diets.csv"):
+    """
+    Load dataset from Azure Blob Storage or local filesystem.
+    Falls back to local if blob storage is not configured.
+    """
+    # Try to load from Azure Blob Storage first
+    if os.getenv("AZURE_STORAGE_CONNECTION_STRING"):
+        try:
+            from .blob_storage import read_csv_from_blob
+
+            return read_csv_from_blob(filename)
+        except Exception as e:
+            pass
+
+    # Fallback to local filesystem
+    csv_path = Path(__file__).parent / "datasets" / filename
+    return pd.read_csv(csv_path)
 
 
 def get_clusters(diet_type="all", num_clusters=3):
@@ -25,10 +45,8 @@ def get_clusters(diet_type="all", num_clusters=3):
         except (ValueError, TypeError):
             num_clusters = 3
 
-        # Get the path to the CSV file inside the function app folder
-        csv_path = Path(__file__).parent / "datasets" / "All_Diets.csv"
-
-        # Read the CSV
+        # Load dataset (from blob or local)
+        df = load_dataset("All_Diets.csv")
         df = pd.read_csv(csv_path)
 
         # Filter by diet type if specified
