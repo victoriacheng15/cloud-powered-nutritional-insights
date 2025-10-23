@@ -40,4 +40,4 @@ jobs:
       
       - name: Format, lint, and check with Biome (JavaScript)
         working-directory: ./project2
-        run: biome check --check static/ api/functions/ app.py
+        run: biome check static/ api/functions/ app.py
