@@ -1,11 +1,10 @@
-.PHONY: help freeze install format run dev clean docker-build docker-run
+.PHONY: help freeze install format run clean docker-build docker-run
 
 help:
 	@echo "Available commands:"
 	@echo "  make freeze        - Freeze current dependencies to requirements.txt"
 	@echo "  make install       - Install dependencies"
 	@echo "  make run           - Run Flask app"
-	@echo "  make dev           - Run Flask app in development mode"
 	@echo "  make clean         - Remove __pycache__ and .pyc files"
 	@echo "  make docker-build  - Build Docker image"
 	@echo "  make docker-run    - Run Docker container"
@@ -22,8 +21,8 @@ run:
 format:
 	ruff format .
 
-dev:
-	export FLASK_ENV=development && export FLASK_APP=app.py && flask run
+js-format:
+	npx @biomejs/biome format --write static/
 
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} +
