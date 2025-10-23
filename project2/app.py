@@ -58,5 +58,23 @@ def get_nutritional_insights():
     pass
 
 
+@app.route("/api/recipes")
+@proxy_to_function_app(function_url, function_key)
+def get_recipes():
+    """
+    Proxy endpoint to call Azure Function App recipes
+    Returns recipes filtered by diet type with pagination
+
+    Query Parameters:
+        - diet_type: (optional) "all", "vegan", "keto", "mediterranean", "paleo", or "dash"
+                     Defaults to "all" if not provided
+        - page: (optional) Page number (1-indexed), defaults to 1
+        - page_size: (optional) Number of recipes per page, defaults to 20
+
+    Example: /api/recipes?diet_type=keto&page=1&page_size=20
+    """
+    pass
+
+
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)

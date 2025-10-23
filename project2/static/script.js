@@ -351,6 +351,206 @@
         }
     }
 
+    // Display recipes in a table format
+    function displayRecipes(data) {
+        // Get or create container for recipes
+        let recipesContainer = document.getElementById('recipes-container');
+
+        if (!recipesContainer) {
+            recipesContainer = document.createElement('section');
+            recipesContainer.id = 'recipes-container';
+            recipesContainer.className = 'mb-8';
+            recipesContainer.innerHTML = '<h2 class="text-2xl font-semibold mb-4">Recipes</h2>';
+
+            // Insert after the API Data Interaction section
+            const apiSection = document.querySelector('section:has(button:nth-of-type(1))');
+            if (apiSection && apiSection.nextSibling) {
+                apiSection.parentNode.insertBefore(recipesContainer, apiSection.nextSibling.nextSibling);
+            } else {
+                document.querySelector('main').insertBefore(recipesContainer, document.querySelector('footer'));
+            }
+        }
+
+        // Clear previous content
+        recipesContainer.innerHTML = '<h2 class="text-2xl font-semibold mb-4">Recipes</h2>';
+
+        // Check for errors
+        if (data.error) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded';
+            errorDiv.textContent = `Error: ${data.error}`;
+            recipesContainer.appendChild(errorDiv);
+            return;
+        }
+
+        // Display metadata
+        const metadata = document.createElement('div');
+        metadata.className = 'mb-4 text-sm text-gray-600';
+        metadata.innerHTML = `
+            <p><strong>Diet Type:</strong> ${data.diet_type || 'All'}</p>
+            <p><strong>Total Recipes:</strong> ${data.total_count}</p>
+            <p><strong>Page:</strong> ${data.page} of ${data.total_pages}</p>
+        `;
+        recipesContainer.appendChild(metadata);
+
+        // Create table for recipes
+        if (data.recipes.length > 0) {
+            const table = document.createElement('table');
+            table.className = 'w-full border-collapse border border-gray-300 text-sm';
+            table.style.marginBottom = '20px';
+            table.style.tableLayout = 'fixed'; // Fix column widths
+            table.style.width = '100%';
+
+            // Create header
+            const thead = document.createElement('thead');
+            thead.className = 'bg-blue-100';
+            thead.innerHTML = `
+                <tr>
+                    <th class="border border-gray-300 px-4 py-2 text-left" style="width: 50%;">Recipe Name</th>
+                    <th class="border border-gray-300 px-4 py-2 text-left" style="width: 20%;">Cuisine</th>
+                    <th class="border border-gray-300 px-4 py-2 text-center" style="width: 10%;">Protein (g)</th>
+                    <th class="border border-gray-300 px-4 py-2 text-center" style="width: 10%;">Carbs (g)</th>
+                    <th class="border border-gray-300 px-4 py-2 text-center" style="width: 10%;">Fat (g)</th>
+                </tr>
+            `;
+            table.appendChild(thead);
+
+            // Create body
+            const tbody = document.createElement('tbody');
+            data.recipes.forEach((recipe, index) => {
+                const row = document.createElement('tr');
+                row.className = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+                row.innerHTML = `
+                    <td class="border border-gray-300 px-4 py-2 overflow-hidden" style="width: 50%; word-wrap: break-word;">${recipe.recipe_name}</td>
+                    <td class="border border-gray-300 px-4 py-2" style="width: 20%;">${recipe.cuisine_type}</td>
+                    <td class="border border-gray-300 px-4 py-2 text-center" style="width: 10%;">${recipe.protein_g}</td>
+                    <td class="border border-gray-300 px-4 py-2 text-center" style="width: 10%;">${recipe.carbs_g}</td>
+                    <td class="border border-gray-300 px-4 py-2 text-center" style="width: 10%;">${recipe.fat_g}</td>
+                `;
+                tbody.appendChild(row);
+            });
+            table.appendChild(tbody);
+            recipesContainer.appendChild(table);
+        } else {
+            const noData = document.createElement('p');
+            noData.className = 'text-gray-500';
+            noData.textContent = 'No recipes found for this diet type.';
+            recipesContainer.appendChild(noData);
+        }
+
+        // Create pagination controls
+        const paginationDiv = document.createElement('div');
+        paginationDiv.className = 'flex justify-center gap-2 mt-4';
+
+        // Previous button
+        const prevBtn = document.createElement('button');
+        prevBtn.textContent = 'Previous';
+        prevBtn.className = 'px-3 py-1 bg-gray-300 rounded hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed';
+        prevBtn.disabled = !data.has_previous;
+        prevBtn.onclick = async () => {
+            const dietTypeSelect = document.querySelector('select');
+            const dietType = dietTypeSelect ? dietTypeSelect.value : 'all';
+            await getRecipes(dietType, data.page - 1);
+        };
+        paginationDiv.appendChild(prevBtn);
+
+        // Calculate page range (show 5 pages at a time)
+        const maxPagesToShow = 5;
+        let startPage = Math.max(1, data.page - Math.floor(maxPagesToShow / 2));
+        let endPage = Math.min(data.total_pages, startPage + maxPagesToShow - 1);
+
+        // Adjust startPage if we're near the end
+        if (endPage - startPage + 1 < maxPagesToShow) {
+            startPage = Math.max(1, endPage - maxPagesToShow + 1);
+        }
+
+        // Show ellipsis and first page if needed
+        if (startPage > 1) {
+            const firstBtn = document.createElement('button');
+            firstBtn.textContent = '1';
+            firstBtn.className = 'px-3 py-1 bg-gray-300 rounded hover:bg-gray-400';
+            firstBtn.onclick = async () => {
+                const dietTypeSelect = document.querySelector('select');
+                const dietType = dietTypeSelect ? dietTypeSelect.value : 'all';
+                await getRecipes(dietType, 1);
+            };
+            paginationDiv.appendChild(firstBtn);
+
+            if (startPage > 2) {
+                const ellipsis = document.createElement('span');
+                ellipsis.textContent = '...';
+                ellipsis.className = 'px-2 py-1';
+                paginationDiv.appendChild(ellipsis);
+            }
+        }
+
+        // Page numbers (limited to 5)
+        for (let i = startPage; i <= endPage; i++) {
+            const pageBtn = document.createElement('button');
+            pageBtn.textContent = i;
+            pageBtn.className = i === data.page
+                ? 'px-3 py-1 bg-blue-600 text-white rounded'
+                : 'px-3 py-1 bg-gray-300 rounded hover:bg-gray-400';
+            pageBtn.onclick = async () => {
+                const dietTypeSelect = document.querySelector('select');
+                const dietType = dietTypeSelect ? dietTypeSelect.value : 'all';
+                await getRecipes(dietType, i);
+            };
+            paginationDiv.appendChild(pageBtn);
+        }
+
+        // Show ellipsis and last page if needed
+        if (endPage < data.total_pages) {
+            if (endPage < data.total_pages - 1) {
+                const ellipsis = document.createElement('span');
+                ellipsis.textContent = '...';
+                ellipsis.className = 'px-2 py-1';
+                paginationDiv.appendChild(ellipsis);
+            }
+
+            const lastBtn = document.createElement('button');
+            lastBtn.textContent = data.total_pages;
+            lastBtn.className = 'px-3 py-1 bg-gray-300 rounded hover:bg-gray-400';
+            lastBtn.onclick = async () => {
+                const dietTypeSelect = document.querySelector('select');
+                const dietType = dietTypeSelect ? dietTypeSelect.value : 'all';
+                await getRecipes(dietType, data.total_pages);
+            };
+            paginationDiv.appendChild(lastBtn);
+        }
+
+        // Next button
+        const nextBtn = document.createElement('button');
+        nextBtn.textContent = 'Next';
+        nextBtn.className = 'px-3 py-1 bg-gray-300 rounded hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed';
+        nextBtn.disabled = !data.has_next;
+        nextBtn.onclick = async () => {
+            const dietTypeSelect = document.querySelector('select');
+            const dietType = dietTypeSelect ? dietTypeSelect.value : 'all';
+            await getRecipes(dietType, data.page + 1);
+        };
+        paginationDiv.appendChild(nextBtn);
+
+        recipesContainer.appendChild(paginationDiv);
+    }
+
+    // Fetch recipes from Flask backend
+    async function getRecipes(dietType = 'all', page = 1, pageSize = 20) {
+        try {
+            const response = await fetch(`/api/recipes?diet_type=${dietType}&page=${page}&page_size=${pageSize}`);
+            const data = await response.json();
+            console.log(`Recipes for ${dietType} (page ${page}):`, data);
+
+            // Display the recipes
+            displayRecipes(data);
+
+            return data;
+        } catch (error) {
+            console.error('Error fetching recipes:', error);
+            displayRecipes({ error: error.message, recipes: [], total_count: 0 });
+        }
+    }
+
     // Set up event listeners for buttons
     document.addEventListener('DOMContentLoaded', async function () {
         // Test greeting endpoint
@@ -373,6 +573,21 @@
             });
         } else {
             console.warn('Get Nutritional Insights button not found');
+        }
+
+        // Get the "Get Recipes" button
+        const recipesButton = Array.from(buttons).find(btn => btn.textContent.includes('Get Recipes'));
+
+        if (recipesButton) {
+            recipesButton.addEventListener('click', async function () {
+                // Get selected diet type from dropdown
+                const dietTypeSelect = document.querySelector('select');
+                const dietType = dietTypeSelect ? dietTypeSelect.value : 'all';
+                // console.log(`Getting recipes for: ${dietType}`);
+                await getRecipes(dietType, 1, 20);
+            });
+        } else {
+            console.warn('Get Recipes button not found');
         }
     });
 })(); // Close IIFE
