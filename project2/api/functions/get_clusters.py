@@ -4,7 +4,7 @@ from pathlib import Path
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 import json
-from utils import load_dataset, filter_by_diet_type
+from .utils import load_dataset, filter_by_diet_type
 
 
 def get_clusters(diet_type="all", num_clusters=3):

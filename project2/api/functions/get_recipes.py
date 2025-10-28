@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 from pathlib import Path
-from utils import load_dataset, filter_by_diet_type
+from .utils import load_dataset, filter_by_diet_type
 
 
 def get_recipes(diet_type="all", page=1, page_size=20):

@@ -2,7 +2,7 @@ import json
 import os
 import pandas as pd
 from pathlib import Path
-from utils import load_dataset, filter_by_diet_type
+from .utils import load_dataset, filter_by_diet_type
 
 
 def get_nutritional_insights(diet_type="all"):

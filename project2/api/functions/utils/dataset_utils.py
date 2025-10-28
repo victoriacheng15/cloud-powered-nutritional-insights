@@ -22,14 +22,14 @@ def load_dataset(filename="All_Diets.csv"):
     # Try to load from Azure Blob Storage first
     if os.getenv("AZURE_STORAGE_CONNECTION_STRING"):
         try:
-            from .blob_storage import read_csv_from_blob
+            from ..blob_storage import read_csv_from_blob
 
             return read_csv_from_blob(filename)
         except Exception as e:
             pass
 
     # Fallback to local filesystem
-    csv_path = Path(__file__).parent / "datasets" / filename
+    csv_path = Path(__file__).parent.parent / "datasets" / filename
     return pd.read_csv(csv_path)
 
 
