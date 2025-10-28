@@ -2,10 +2,8 @@ name: Project 2 CI/CD
 
 on:
   pull_request:
-    branches:
-      - main
-    paths:
-      - 'project2/**'
+    branches: [ main ]
+    paths: [ 'project2/**' ]
 
 jobs:
   python-format:
