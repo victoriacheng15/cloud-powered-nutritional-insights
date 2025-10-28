@@ -2,26 +2,7 @@ import json
 import os
 import pandas as pd
 from pathlib import Path
-
-
-def load_dataset(filename="All_Diets.csv"):
-    """
-    Load dataset from Azure Blob Storage or local filesystem.
-    Falls back to local if blob storage is not configured.
-    """
-    # Try to load from Azure Blob Storage first
-    if os.getenv("AZURE_STORAGE_CONNECTION_STRING"):
-        try:
-            from .blob_storage import read_csv_from_blob
-
-            return read_csv_from_blob(filename)
-        except Exception as e:
-            pass
-
-    # Fallback to local filesystem
-    csv_path = Path(__file__).parent / "datasets" / filename
-    df = pd.read_csv(csv_path)
-    return df
+from utils import load_dataset, filter_by_diet_type
 
 
 def get_nutritional_insights(diet_type="all"):
@@ -39,8 +20,7 @@ def get_nutritional_insights(diet_type="all"):
         df = load_dataset("All_Diets.csv")
 
         # Filter by diet type if specified
-        if diet_type.lower() != "all":
-            df = df[df["Diet_type"].str.lower() == diet_type.lower()]
+        df = filter_by_diet_type(df, diet_type)
 
         # If no data found, return error
         if len(df) == 0:
