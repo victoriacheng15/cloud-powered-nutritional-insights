@@ -47,7 +47,6 @@ def get_clusters(diet_type="all", num_clusters=3):
 
         # Load dataset (from blob or local)
         df = load_dataset("All_Diets.csv")
-        df = pd.read_csv(csv_path)
 
         # Filter by diet type if specified
         if diet_type.lower() != "all":
