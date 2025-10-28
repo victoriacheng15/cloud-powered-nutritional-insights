@@ -4,191 +4,17 @@
 	let scatterPlotInstance = null;
 	let pieChartInstance = null;
 
-	// Helper function to destroy chart instance if it exists
-	function destroyChart(chartInstance) {
-		if (chartInstance) chartInstance.destroy();
-	}
-
-	// Helper function to display error message
-	function displayError(container, errorMessage) {
-		const errorDiv = document.createElement("div");
-		errorDiv.className =
-			"bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded";
-		errorDiv.textContent = `Error: ${errorMessage}`;
-		container.appendChild(errorDiv);
-	}
-
-	// Helper function to display metadata
-	function displayMetadata(container, metadataHTML) {
-		const metadata = document.createElement("div");
-		metadata.className = "mb-4 text-sm text-gray-600";
-		metadata.innerHTML = metadataHTML;
-		container.appendChild(metadata);
-	}
-
-	// Helper function to get base chart options with common properties
-	function getBaseChartOptions(
-		title,
-		legendPosition = "top",
-		additionalOptions = {},
-	) {
-		return {
-			responsive: true,
-			maintainAspectRatio: true,
-			plugins: {
-				title: {
-					display: true,
-					text: title,
-				},
-				legend: {
-					display: true,
-					position: legendPosition,
-				},
-				...additionalOptions.plugins,
-			},
-			...additionalOptions,
-		};
-	}
-
-	// Helper function to setup button event listener
-	function setupButtonListener(buttonText, fetchFunction, ...args) {
-		const buttons = document.querySelectorAll("button");
-		const button = Array.from(buttons).find((btn) =>
-			btn.textContent.includes(buttonText),
-		);
-
-		if (button) {
-			button.addEventListener("click", async function () {
-				const dietType = getDietType();
-				await fetchFunction(dietType, ...args);
-			});
-		} else {
-			console.warn(`${buttonText} button not found`);
-		}
-	}
-
-	// Helper function to get diet type from select dropdown
-	function getDietType() {
-		const dietTypeSelect = document.querySelector("select");
-		return dietTypeSelect ? dietTypeSelect.value : "all";
-	}
-
-	// Helper function to create pagination buttons
-	function createPaginationButton(
-		text,
-		pageNumber,
-		isActive = false,
-		isDisabled = false,
-		customClass = "",
-	) {
-		const btn = document.createElement("button");
-		btn.textContent = text;
-		btn.disabled = isDisabled;
-
-		if (isActive) {
-			btn.className = customClass || "px-3 py-1 bg-blue-600 text-white rounded";
-		} else if (isDisabled) {
-			btn.className =
-				customClass ||
-				"px-3 py-1 bg-gray-300 rounded hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed";
-		} else {
-			btn.className =
-				customClass || "px-3 py-1 bg-gray-300 rounded hover:bg-gray-400";
-		}
-
-		return btn;
-	}
-
-	// Helper function to create a table with headers and rows
-	function createTable(headerHTML, headerClassName, dataItems, rowGenerator) {
-		const table = document.createElement("table");
-		table.className = "w-full border-collapse border border-gray-300 text-sm";
-		table.style.marginBottom = "20px";
-		table.style.tableLayout = "fixed";
-		table.style.width = "100%";
-
-		// Create header
-		const thead = document.createElement("thead");
-		thead.className = headerClassName;
-		thead.innerHTML = headerHTML;
-		table.appendChild(thead);
-
-		// Create body
-		const tbody = document.createElement("tbody");
-		dataItems.forEach((item, index) => {
-			const row = document.createElement("tr");
-			row.className = index % 2 === 0 ? "bg-white" : "bg-gray-50";
-			row.innerHTML = rowGenerator(item);
-			tbody.appendChild(row);
-		});
-		table.appendChild(tbody);
-
-		return table;
-	}
-
-	// Helper function to display "no data found" message
-	function displayNoData(container, message) {
-		const noData = document.createElement("p");
-		noData.className = "text-gray-500";
-		noData.textContent = message;
-		container.appendChild(noData);
-	}
-
-	// Helper function to setup display container and clear previous content
-	function setupDisplayContainer(headingId, stopAtId = null, stopAtTag = null) {
-		// Get the heading
-		const heading = document.getElementById(headingId);
-
-		// Show the heading
-		heading.classList.remove("hidden");
-
-		// Clear any previous content after the heading
-		let currentElement = heading.nextElementSibling;
-		while (currentElement) {
-			// Stop if we reach the specified element ID or tag
-			if (
-				(stopAtId && currentElement.id === stopAtId) ||
-				(stopAtTag && currentElement.tagName === stopAtTag)
-			) {
-				break;
-			}
-			const temp = currentElement;
-			currentElement = currentElement.nextElementSibling;
-			temp.remove();
-		}
-
-		// Create a new container for this batch of data
-		const container = document.createElement("div");
-		container.className = "mb-8";
-
-		// Insert after heading
-		heading.parentNode.insertBefore(container, heading.nextSibling);
-
-		return container;
-	}
-
-	// Helper function for generic fetch and display
-	async function fetchAndDisplay(url, displayFunction, errorData) {
-		try {
-			const response = await fetch(url);
-			const data = await response.json();
-
-			// Display the data
-			displayFunction(data);
-
-			return data;
-		} catch (error) {
-			console.error(`Error fetching from ${url}:`, error);
-			displayFunction({ ...errorData, error: error.message });
-		}
-	}
-
 	// Render bar chart with nutritional data
 	function renderBarChart(data) {
 		const ctx = document.getElementById("barChart").getContext("2d");
 
 		// Destroy previous chart if it exists
-		destroyChart(barChartInstance);
+		if (barChartInstance) {
+			barChartInstance.destroy();
+		}
+
+		const maxValue =
+			Math.max(data.protein.max, data.carbs.max, data.fat.max) * 1.1;
 
 		barChartInstance = new Chart(ctx, {
 			type: "bar",
@@ -218,21 +44,35 @@
 					},
 				],
 			},
-			options: getBaseChartOptions(
-				`Nutritional Insights - ${data.diet_type.charAt(0).toUpperCase() + data.diet_type.slice(1)}`,
-				"top",
-				{
-					scales: {
-						y: {
-							beginAtZero: true,
-							title: {
-								display: true,
-								text: "Grams (g)",
-							},
+			options: {
+				responsive: true,
+				maintainAspectRatio: true,
+				plugins: {
+					title: {
+						display: true,
+						text: `Nutritional Insights - ${data.diet_type.charAt(0).toUpperCase() + data.diet_type.slice(1)}`,
+					},
+					legend: {
+						display: true,
+						position: "top",
+					},
+				},
+				scales: {
+					y: {
+						type: "logarithmic",
+						min: 0.01,
+						max: Math.max(data.protein.max, data.carbs.max, data.fat.max) * 1.1,
+						ticks: {
+							callback: (value) => value.toLocaleString(),
+							major: { enabled: true },
+						},
+						title: {
+							display: true,
+							text: "Grams (g)",
 						},
 					},
 				},
-			),
+			},
 		});
 	}
 
@@ -241,26 +81,9 @@
 		const ctx = document.getElementById("scatterPlot").getContext("2d");
 
 		// Destroy previous chart if it exists
-		destroyChart(scatterPlotInstance);
-
-		// Create scatter data points showing the average values
-		const scatterData = [
-			{
-				x: data.protein.average,
-				y: data.carbs.average,
-				label: "Avg Protein vs Carbs",
-			},
-			{
-				x: data.protein.min,
-				y: data.carbs.min,
-				label: "Min Protein vs Carbs",
-			},
-			{
-				x: data.protein.max,
-				y: data.carbs.max,
-				label: "Max Protein vs Carbs",
-			},
-		];
+		if (scatterPlotInstance) {
+			scatterPlotInstance.destroy();
+		}
 
 		scatterPlotInstance = new Chart(ctx, {
 			type: "scatter",
@@ -292,28 +115,48 @@
 					},
 				],
 			},
-			options: getBaseChartOptions(
-				`Nutrient Relationships - ${data.diet_type.charAt(0).toUpperCase() + data.diet_type.slice(1)}`,
-				"top",
-				{
-					scales: {
-						x: {
-							title: {
-								display: true,
-								text: "Protein (g)",
-							},
-							min: 0,
+			options: {
+				responsive: true,
+				maintainAspectRatio: true,
+				plugins: {
+					title: {
+						display: true,
+						text: `Nutrient Relationships - ${data.diet_type.charAt(0).toUpperCase() + data.diet_type.slice(1)}`,
+					},
+					legend: {
+						display: true,
+						position: "top",
+					},
+				},
+				scales: {
+					x: {
+						type: "logarithmic",
+						min: 0.01,
+						max: Math.max(data.protein.max, data.carbs.max, data.fat.max) * 1.1,
+						ticks: {
+							callback: (v) => v.toLocaleString(),
+							major: { enabled: true },
 						},
-						y: {
-							title: {
-								display: true,
-								text: "Carbs (g)",
-							},
-							min: 0,
+						title: {
+							display: true,
+							text: "Protein (g)",
+						},
+					},
+					y: {
+						type: "logarithmic",
+						min: 0.01,
+						max: Math.max(data.protein.max, data.carbs.max, data.fat.max),
+						ticks: {
+							callback: (v) => v.toLocaleString(),
+							major: { enabled: true },
+						},
+						title: {
+							display: true,
+							text: "Carbs (g)",
 						},
 					},
 				},
-			),
+			},
 		});
 	}
 
@@ -414,7 +257,9 @@
 		const ctx = document.getElementById("pieChart").getContext("2d");
 
 		// Destroy previous chart if it exists
-		destroyChart(pieChartInstance);
+		if (pieChartInstance) {
+			pieChartInstance.destroy();
+		}
 
 		// Calculate total macronutrients (average values)
 		const totalMacros =
@@ -452,23 +297,29 @@
 					},
 				],
 			},
-			options: getBaseChartOptions(
-				`Macronutrient Distribution - ${data.diet_type.charAt(0).toUpperCase() + data.diet_type.slice(1)}`,
-				"bottom",
-				{
-					plugins: {
-						tooltip: {
-							callbacks: {
-								label: function (context) {
-									const label = context.label || "";
-									const value = context.parsed || 0;
-									return `${label}: ${value.toFixed(1)}g`;
-								},
+			options: {
+				responsive: true,
+				maintainAspectRatio: true,
+				plugins: {
+					title: {
+						display: true,
+						text: `Macronutrient Distribution - ${data.diet_type.charAt(0).toUpperCase() + data.diet_type.slice(1)}`,
+					},
+					legend: {
+						display: true,
+						position: "bottom",
+					},
+					tooltip: {
+						callbacks: {
+							label: function (context) {
+								const label = context.label || "";
+								const value = context.parsed || 0;
+								return `${label}: ${value.toFixed(1)}g`;
 							},
 						},
 					},
 				},
-			),
+			},
 		});
 	}
 
@@ -478,6 +329,7 @@
 				`/api/nutritional-insights?diet_type=${dietType}`,
 			);
 			const data = await response.json();
+			// console.log(`Nutritional Insights for ${dietType}:`, data);
 
 			// Render the bar chart with the data
 			renderBarChart(data);
@@ -508,28 +360,62 @@
 
 	// Display recipes in a table format
 	function displayRecipes(data) {
-		const recipesContainer = setupDisplayContainer(
-			"recipes-heading",
-			"clusters-heading",
+		// Get the h3 heading for recipes
+		const recipesHeading = document.getElementById("recipes-heading");
+
+		// Show the heading
+		recipesHeading.classList.remove("hidden");
+
+		// Clear any previous content after the heading
+		let recipesContainer = recipesHeading.nextElementSibling;
+		while (recipesContainer && recipesContainer.id !== "clusters-heading") {
+			const temp = recipesContainer;
+			recipesContainer = recipesContainer.nextElementSibling;
+			temp.remove();
+		}
+
+		// Create a new container for this batch of data
+		recipesContainer = document.createElement("div");
+		recipesContainer.className = "mb-8";
+
+		// Insert after recipes heading
+		recipesHeading.parentNode.insertBefore(
+			recipesContainer,
+			recipesHeading.nextSibling,
 		);
 
 		// Check for errors
 		if (data.error) {
-			displayError(recipesContainer, data.error);
+			const errorDiv = document.createElement("div");
+			errorDiv.className =
+				"bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded";
+			errorDiv.textContent = `Error: ${data.error}`;
+			recipesContainer.appendChild(errorDiv);
 			return;
 		}
 
 		// Display metadata
-		const metadataHTML = `
+		const metadata = document.createElement("div");
+		metadata.className = "mb-4 text-sm text-gray-600";
+		metadata.innerHTML = `
             <p><strong>Diet Type:</strong> ${data.diet_type || "All"}</p>
             <p><strong>Total Recipes:</strong> ${data.total_count}</p>
             <p><strong>Page:</strong> ${data.page} of ${data.total_pages}</p>
         `;
-		displayMetadata(recipesContainer, metadataHTML);
+		recipesContainer.appendChild(metadata);
 
 		// Create table for recipes
 		if (data.recipes.length > 0) {
-			const headerHTML = `
+			const table = document.createElement("table");
+			table.className = "w-full border-collapse border border-gray-300 text-sm";
+			table.style.marginBottom = "20px";
+			table.style.tableLayout = "fixed"; // Fix column widths
+			table.style.width = "100%";
+
+			// Create header
+			const thead = document.createElement("thead");
+			thead.className = "bg-blue-100";
+			thead.innerHTML = `
                 <tr>
                     <th class="border border-gray-300 px-4 py-2 text-left" style="width: 50%;">Recipe Name</th>
                     <th class="border border-gray-300 px-4 py-2 text-left" style="width: 20%;">Cuisine</th>
@@ -538,22 +424,29 @@
                     <th class="border border-gray-300 px-4 py-2 text-center" style="width: 10%;">Fat (g)</th>
                 </tr>
             `;
-			const rowGenerator = (recipe) => `
+			table.appendChild(thead);
+
+			// Create body
+			const tbody = document.createElement("tbody");
+			data.recipes.forEach((recipe, index) => {
+				const row = document.createElement("tr");
+				row.className = index % 2 === 0 ? "bg-white" : "bg-gray-50";
+				row.innerHTML = `
                     <td class="border border-gray-300 px-4 py-2 overflow-hidden" style="width: 50%; word-wrap: break-word;">${recipe.recipe_name}</td>
                     <td class="border border-gray-300 px-4 py-2" style="width: 20%;">${recipe.cuisine_type}</td>
                     <td class="border border-gray-300 px-4 py-2 text-center" style="width: 10%;">${recipe.protein_g}</td>
                     <td class="border border-gray-300 px-4 py-2 text-center" style="width: 10%;">${recipe.carbs_g}</td>
                     <td class="border border-gray-300 px-4 py-2 text-center" style="width: 10%;">${recipe.fat_g}</td>
                 `;
-			const table = createTable(
-				headerHTML,
-				"bg-blue-100",
-				data.recipes,
-				rowGenerator,
-			);
+				tbody.appendChild(row);
+			});
+			table.appendChild(tbody);
 			recipesContainer.appendChild(table);
 		} else {
-			displayNoData(recipesContainer, "No recipes found for this diet type.");
+			const noData = document.createElement("p");
+			noData.className = "text-gray-500";
+			noData.textContent = "No recipes found for this diet type.";
+			recipesContainer.appendChild(noData);
 		}
 
 		// Create pagination controls
@@ -561,14 +454,15 @@
 		paginationDiv.className = "flex justify-center gap-2 mt-4";
 
 		// Previous button
-		const prevBtn = createPaginationButton(
-			"Previous",
-			data.page - 1,
-			false,
-			!data.has_previous,
-		);
+		const prevBtn = document.createElement("button");
+		prevBtn.textContent = "Previous";
+		prevBtn.className =
+			"px-3 py-1 bg-gray-300 rounded hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed";
+		prevBtn.disabled = !data.has_previous;
 		prevBtn.onclick = async () => {
-			await getRecipes(getDietType(), data.page - 1);
+			const dietTypeSelect = document.querySelector("select");
+			const dietType = dietTypeSelect ? dietTypeSelect.value : "all";
+			await getRecipes(dietType, data.page - 1);
 		};
 		paginationDiv.appendChild(prevBtn);
 
@@ -584,9 +478,13 @@
 
 		// Show ellipsis and first page if needed
 		if (startPage > 1) {
-			const firstBtn = createPaginationButton("1", 1);
+			const firstBtn = document.createElement("button");
+			firstBtn.textContent = "1";
+			firstBtn.className = "px-3 py-1 bg-gray-300 rounded hover:bg-gray-400";
 			firstBtn.onclick = async () => {
-				await getRecipes(getDietType(), 1);
+				const dietTypeSelect = document.querySelector("select");
+				const dietType = dietTypeSelect ? dietTypeSelect.value : "all";
+				await getRecipes(dietType, 1);
 			};
 			paginationDiv.appendChild(firstBtn);
 
@@ -600,9 +498,16 @@
 
 		// Page numbers (limited to 5)
 		for (let i = startPage; i <= endPage; i++) {
-			const pageBtn = createPaginationButton(i, i, i === data.page);
+			const pageBtn = document.createElement("button");
+			pageBtn.textContent = i;
+			pageBtn.className =
+				i === data.page
+					? "px-3 py-1 bg-blue-600 text-white rounded"
+					: "px-3 py-1 bg-gray-300 rounded hover:bg-gray-400";
 			pageBtn.onclick = async () => {
-				await getRecipes(getDietType(), i);
+				const dietTypeSelect = document.querySelector("select");
+				const dietType = dietTypeSelect ? dietTypeSelect.value : "all";
+				await getRecipes(dietType, i);
 			};
 			paginationDiv.appendChild(pageBtn);
 		}
@@ -616,25 +521,27 @@
 				paginationDiv.appendChild(ellipsis);
 			}
 
-			const lastBtn = createPaginationButton(
-				data.total_pages,
-				data.total_pages,
-			);
+			const lastBtn = document.createElement("button");
+			lastBtn.textContent = data.total_pages;
+			lastBtn.className = "px-3 py-1 bg-gray-300 rounded hover:bg-gray-400";
 			lastBtn.onclick = async () => {
-				await getRecipes(getDietType(), data.total_pages);
+				const dietTypeSelect = document.querySelector("select");
+				const dietType = dietTypeSelect ? dietTypeSelect.value : "all";
+				await getRecipes(dietType, data.total_pages);
 			};
 			paginationDiv.appendChild(lastBtn);
 		}
 
 		// Next button
-		const nextBtn = createPaginationButton(
-			"Next",
-			data.page + 1,
-			false,
-			!data.has_next,
-		);
+		const nextBtn = document.createElement("button");
+		nextBtn.textContent = "Next";
+		nextBtn.className =
+			"px-3 py-1 bg-gray-300 rounded hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed";
+		nextBtn.disabled = !data.has_next;
 		nextBtn.onclick = async () => {
-			await getRecipes(getDietType(), data.page + 1);
+			const dietTypeSelect = document.querySelector("select");
+			const dietType = dietTypeSelect ? dietTypeSelect.value : "all";
+			await getRecipes(dietType, data.page + 1);
 		};
 		paginationDiv.appendChild(nextBtn);
 
@@ -643,29 +550,62 @@
 
 	// Display clusters in a summary format
 	function displayClusters(data) {
-		const clustersContainer = setupDisplayContainer(
-			"clusters-heading",
-			null,
-			"FOOTER",
+		// Get the h3 heading for clusters
+		const clustersHeading = document.getElementById("clusters-heading");
+
+		// Show the heading
+		clustersHeading.classList.remove("hidden");
+
+		// Clear any previous content after the heading
+		let clustersContainer = clustersHeading.nextElementSibling;
+		while (clustersContainer && clustersContainer.tagName !== "FOOTER") {
+			const temp = clustersContainer;
+			clustersContainer = clustersContainer.nextElementSibling;
+			temp.remove();
+		}
+
+		// Create a new container for this batch of data
+		clustersContainer = document.createElement("div");
+		clustersContainer.className = "mb-8";
+
+		// Insert after clusters heading
+		clustersHeading.parentNode.insertBefore(
+			clustersContainer,
+			clustersHeading.nextSibling,
 		);
 
 		// Check for errors
 		if (data.error) {
-			displayError(clustersContainer, data.error);
+			const errorDiv = document.createElement("div");
+			errorDiv.className =
+				"bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded";
+			errorDiv.textContent = `Error: ${data.error}`;
+			clustersContainer.appendChild(errorDiv);
 			return;
 		}
 
 		// Display metadata
-		const metadataHTML = `
+		const metadata = document.createElement("div");
+		metadata.className = "mb-4 text-sm text-gray-600";
+		metadata.innerHTML = `
             <p><strong>Diet Type:</strong> ${data.diet_type || "All"}</p>
             <p><strong>Total Recipes:</strong> ${data.total_recipes}</p>
             <p><strong>Number of Clusters:</strong> ${data.num_clusters}</p>
         `;
-		displayMetadata(clustersContainer, metadataHTML);
+		clustersContainer.appendChild(metadata);
 
 		// Create table for clusters
 		if (data.clusters && data.clusters.length > 0) {
-			const headerHTML = `
+			const table = document.createElement("table");
+			table.className = "w-full border-collapse border border-gray-300 text-sm";
+			table.style.marginBottom = "20px";
+			table.style.tableLayout = "fixed";
+			table.style.width = "100%";
+
+			// Create header
+			const thead = document.createElement("thead");
+			thead.className = "bg-purple-100";
+			thead.innerHTML = `
                 <tr>
                     <th class="border border-gray-300 px-4 py-2 text-left" style="width: 25%;">Cluster Label</th>
                     <th class="border border-gray-300 px-4 py-2 text-center" style="width: 10%;">Recipes</th>
@@ -675,11 +615,20 @@
                     <th class="border border-gray-300 px-4 py-2 text-left" style="width: 35%;">Sample Recipes</th>
                 </tr>
             `;
-			const rowGenerator = (cluster) => {
+			table.appendChild(thead);
+
+			// Create body
+			const tbody = document.createElement("tbody");
+			data.clusters.forEach((cluster, index) => {
+				const row = document.createElement("tr");
+				row.className = index % 2 === 0 ? "bg-white" : "bg-gray-50";
+
+				// Sample recipes list
 				const sampleRecipes = cluster.sample_recipes
 					? cluster.sample_recipes.slice(0, 2).join(", ")
 					: "N/A";
-				return `
+
+				row.innerHTML = `
                     <td class="border border-gray-300 px-4 py-2" style="width: 25%; word-wrap: break-word;"><strong>${cluster.label}</strong></td>
                     <td class="border border-gray-300 px-4 py-2 text-center" style="width: 10%;">${cluster.recipe_count}</td>
                     <td class="border border-gray-300 px-4 py-2 text-center" style="width: 10%;">${cluster.avg_protein}</td>
@@ -687,37 +636,54 @@
                     <td class="border border-gray-300 px-4 py-2 text-center" style="width: 10%;">${cluster.avg_fat}</td>
                     <td class="border border-gray-300 px-4 py-2 text-xs" style="width: 35%; word-wrap: break-word;">${sampleRecipes}</td>
                 `;
-			};
-			const table = createTable(
-				headerHTML,
-				"bg-purple-100",
-				data.clusters,
-				rowGenerator,
-			);
+				tbody.appendChild(row);
+			});
+			table.appendChild(tbody);
 			clustersContainer.appendChild(table);
 		} else {
-			displayNoData(clustersContainer, "No clusters found for this diet type.");
+			const noData = document.createElement("p");
+			noData.className = "text-gray-500";
+			noData.textContent = "No clusters found for this diet type.";
+			clustersContainer.appendChild(noData);
 		}
 	}
 
 	// Fetch clusters from Flask backend
-	// Fetch clusters from Flask backend
 	async function getClusters(dietType = "all", numClusters = 3) {
-		const url = `/api/clusters?diet_type=${dietType}&num_clusters=${numClusters}`;
-		return fetchAndDisplay(url, displayClusters, {
-			clusters: [],
-			total_recipes: 0,
-		});
+		try {
+			const response = await fetch(
+				`/api/clusters?diet_type=${dietType}&num_clusters=${numClusters}`,
+			);
+			const data = await response.json();
+			console.log(`Clusters for ${dietType}:`, data);
+
+			// Display the clusters
+			displayClusters(data);
+
+			return data;
+		} catch (error) {
+			console.error("Error fetching clusters:", error);
+			displayClusters({ error: error.message, clusters: [], total_recipes: 0 });
+		}
 	}
 
 	// Fetch recipes from Flask backend
-	// Fetch recipes from Flask backend
 	async function getRecipes(dietType = "all", page = 1, pageSize = 20) {
-		const url = `/api/recipes?diet_type=${dietType}&page=${page}&page_size=${pageSize}`;
-		return fetchAndDisplay(url, displayRecipes, {
-			recipes: [],
-			total_count: 0,
-		});
+		try {
+			const response = await fetch(
+				`/api/recipes?diet_type=${dietType}&page=${page}&page_size=${pageSize}`,
+			);
+			const data = await response.json();
+			console.log(`Recipes for ${dietType} (page ${page}):`, data);
+
+			// Display the recipes
+			displayRecipes(data);
+
+			return data;
+		} catch (error) {
+			console.error("Error fetching recipes:", error);
+			displayRecipes({ error: error.message, recipes: [], total_count: 0 });
+		}
 	}
 
 	// Set up event listeners for buttons
@@ -728,9 +694,53 @@
 		// Load default nutritional insights on page load
 		await getNutritionalInsights("all");
 
-		// Setup button event listeners
-		setupButtonListener("Get Nutritional Insights", getNutritionalInsights);
-		setupButtonListener("Get Recipes", getRecipes, 1, 20);
-		setupButtonListener("Get Clusters", getClusters, 3);
+		// Get the "Get Nutritional Insights" button by finding button with matching text
+		const buttons = document.querySelectorAll("button");
+		const insightsButton = Array.from(buttons).find((btn) =>
+			btn.textContent.includes("Get Nutritional Insights"),
+		);
+
+		if (insightsButton) {
+			insightsButton.addEventListener("click", async function () {
+				// Get selected diet type from dropdown
+				const dietTypeSelect = document.querySelector("select");
+				const dietType = dietTypeSelect ? dietTypeSelect.value : "all";
+				await getNutritionalInsights(dietType);
+			});
+		} else {
+			console.warn("Get Nutritional Insights button not found");
+		}
+
+		// Get the "Get Recipes" button
+		const recipesButton = Array.from(buttons).find((btn) =>
+			btn.textContent.includes("Get Recipes"),
+		);
+
+		if (recipesButton) {
+			recipesButton.addEventListener("click", async function () {
+				// Get selected diet type from dropdown
+				const dietTypeSelect = document.querySelector("select");
+				const dietType = dietTypeSelect ? dietTypeSelect.value : "all";
+				await getRecipes(dietType, 1, 20);
+			});
+		} else {
+			console.warn("Get Recipes button not found");
+		}
+
+		// Get the "Get Clusters" button
+		const clustersButton = Array.from(buttons).find((btn) =>
+			btn.textContent.includes("Get Clusters"),
+		);
+
+		if (clustersButton) {
+			clustersButton.addEventListener("click", async function () {
+				// Get selected diet type from dropdown
+				const dietTypeSelect = document.querySelector("select");
+				const dietType = dietTypeSelect ? dietTypeSelect.value : "all";
+				await getClusters(dietType, 3);
+			});
+		} else {
+			console.warn("Get Clusters button not found");
+		}
 	});
 })();

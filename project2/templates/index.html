@@ -18,11 +18,11 @@
     <main class="container mx-auto p-6">
         <section class="mb-8">
             <h2 class="text-2xl font-semibold mb-4">Explore Nutritional Insights</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div class="bg-white p-4 shadow-lg rounded-lg">
                     <h3 class="font-semibold">Bar Chart</h3>
                     <p class="text-sm text-gray-600">Average macronutrient content by diet type.</p>
-                    <div style="position: relative; height: 322px;">
+                    <div style="position: relative; height: 322px; width: 100%;">
                         <canvas id="barChart"></canvas>
                     </div>
                 </div>
@@ -30,7 +30,7 @@
                 <div class="bg-white p-4 shadow-lg rounded-lg">
                     <h3 class="font-semibold">Scatter Plot</h3>
                     <p class="text-sm text-gray-600">Nutrient relationships (e.g., protein vs carbs).</p>
-                    <div style="position: relative; height: 322px;">
+                    <div style="position: relative; height: 322px; width:100%;">
                         <canvas id="scatterPlot"></canvas>
                     </div>
                 </div>
@@ -38,13 +38,13 @@
                 <div class="bg-white p-4 shadow-lg rounded-lg">
                     <h3 class="font-semibold">Heatmap</h3>
                     <p class="text-sm text-gray-600">Nutrient correlations.</p>
-                    <div id="heatmap" style="height: 322px;" class="w-full"></div>
+                    <div id="heatmap" style="height: 322px; width: 100%;" class="w-full"></div>
                 </div>
 
                 <div class="bg-white p-4 shadow-lg rounded-lg">
                     <h3 class="font-semibold">Pie Chart</h3>
                     <p class="text-sm text-gray-600">Recipe distribution by diet type.</p>
-                    <div style="position: relative; height: 322px;">
+                    <div style="position: relative; height: 322px; width: 310px;">
                         <canvas id="pieChart"></canvas>
                     </div>
                 </div>
