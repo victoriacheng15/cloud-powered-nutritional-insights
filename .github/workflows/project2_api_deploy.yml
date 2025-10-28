@@ -1,4 +1,4 @@
-name: BProject 2 API Function App Deploy
+name: Project 2 API Function App Deploy
 
 on:
   push:
