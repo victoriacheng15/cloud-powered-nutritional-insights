@@ -4,25 +4,7 @@ from pathlib import Path
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 import json
-
-
-def load_dataset(filename="All_Diets.csv"):
-    """
-    Load dataset from Azure Blob Storage or local filesystem.
-    Falls back to local if blob storage is not configured.
-    """
-    # Try to load from Azure Blob Storage first
-    if os.getenv("AZURE_STORAGE_CONNECTION_STRING"):
-        try:
-            from .blob_storage import read_csv_from_blob
-
-            return read_csv_from_blob(filename)
-        except Exception as e:
-            pass
-
-    # Fallback to local filesystem
-    csv_path = Path(__file__).parent / "datasets" / filename
-    return pd.read_csv(csv_path)
+from utils import load_dataset, filter_by_diet_type
 
 
 def get_clusters(diet_type="all", num_clusters=3):
@@ -49,8 +31,7 @@ def get_clusters(diet_type="all", num_clusters=3):
         df = load_dataset("All_Diets.csv")
 
         # Filter by diet type if specified
-        if diet_type.lower() != "all":
-            df = df[df["Diet_type"].str.lower() == diet_type.lower()]
+        df = filter_by_diet_type(df, diet_type)
 
         # If no data found, return empty clusters
         if len(df) == 0:
