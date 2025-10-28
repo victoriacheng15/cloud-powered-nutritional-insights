@@ -2,10 +2,8 @@ name: Project 2 API Function App Deploy
 
 on:
   push:
-    branches:
-      - main
-    paths:
-      - 'project2/api/**'
+    branches: [ main ]
+    paths: [ 'project2/api/**' ]
   workflow_dispatch:
 
 env:
