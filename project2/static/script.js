@@ -329,7 +329,6 @@
 				`/api/nutritional-insights?diet_type=${dietType}`,
 			);
 			const data = await response.json();
-			// console.log(`Nutritional Insights for ${dietType}:`, data);
 
 			// Render the bar chart with the data
 			renderBarChart(data);
@@ -655,7 +654,6 @@
 				`/api/clusters?diet_type=${dietType}&num_clusters=${numClusters}`,
 			);
 			const data = await response.json();
-			console.log(`Clusters for ${dietType}:`, data);
 
 			// Display the clusters
 			displayClusters(data);
@@ -674,7 +672,6 @@
 				`/api/recipes?diet_type=${dietType}&page=${page}&page_size=${pageSize}`,
 			);
 			const data = await response.json();
-			console.log(`Recipes for ${dietType} (page ${page}):`, data);
 
 			// Display the recipes
 			displayRecipes(data);
