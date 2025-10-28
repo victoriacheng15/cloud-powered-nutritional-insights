@@ -1,0 +1,57 @@
+name: BProject 2 API Function App Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'project2/api/**'
+  workflow_dispatch:
+
+env:
+  AZURE_FUNCTIONAPP_NAME: 'nutritional-insights'
+  AZURE_RESOURCE_GROUP: 'school'
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: 'project2/api/'
+  PYTHON_VERSION: '3.12'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v5.0.0
+      - name: Setup Python version
+        uses: actions/setup-python@v6.0.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Create and start virtual environment
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+
+      - name: Install dependencies
+        run: |
+          cd ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+          pip install -r requirements.txt
+
+      - name: Login to Azure
+        uses: azure/login@v2.3.0
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Create deployment package
+        run: |
+          cd ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+          zip -r ../deploy.zip . -x local.settings.json venv/\*
+
+      - name: Deploy to Azure Functions using CLI
+        run: |
+          az functionapp deployment source config-zip \
+            --name ${{ env.AZURE_FUNCTIONAPP_NAME }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --src deploy.zip
+          
