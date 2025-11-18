@@ -6,8 +6,6 @@ help:
 	@echo "  make install       - Install dependencies"
 	@echo "  make run           - Run Flask app"
 	@echo "  make clean         - Remove __pycache__ and .pyc files"
-	@echo "  make docker-build  - Build Docker image"
-	@echo "  make docker-run    - Run Docker container"
 
 freeze:
 	pip freeze > requirements.txt
@@ -27,9 +25,3 @@ js-format:
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} +
 	find . -type f -name "*.pyc" -delete
-
-docker-build:
-	docker build -t nutritional-insights:latest .
-
-docker-run:
-	docker run -p 5000:5000 nutritional-insights:latest
