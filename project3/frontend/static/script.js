@@ -1,4 +1,59 @@
 (function () {
+	// Security Status Color Mapping
+	const statusColorMap = {
+		"Enabled": "text-green-600",
+		"Disabled": "text-red-600",
+		"Secure": "text-green-600",
+		"Compromised": "text-red-600",
+		"Compliant": "text-green-600",
+		"Non-Compliant": "text-red-600"
+	};
+
+	// Fetch and display security status on page load
+	async function loadSecurityStatus() {
+		try {
+			const response = await fetch("/api/security-status");
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+			const data = await response.json();
+			
+			// Update encryption status
+			const encryptionEl = document.getElementById("encryption-status");
+			if (encryptionEl) {
+				encryptionEl.textContent = data.encryption;
+				encryptionEl.className = `font-semibold ${statusColorMap[data.encryption] || "text-yellow-600"}`;
+			}
+			
+			// Update access control status
+			const accessControlEl = document.getElementById("access-control-status");
+			if (accessControlEl) {
+				accessControlEl.textContent = data.access_control;
+				accessControlEl.className = `font-semibold ${statusColorMap[data.access_control] || "text-yellow-600"}`;
+			}
+			
+			// Update compliance status
+			const complianceEl = document.getElementById("compliance-status");
+			if (complianceEl) {
+				complianceEl.textContent = data.compliance;
+				complianceEl.className = `font-semibold ${statusColorMap[data.compliance] || "text-yellow-600"}`;
+			}
+		} catch (error) {
+			console.error("Error loading security status:", error);
+			// Set error state
+			document.getElementById("encryption-status").textContent = "Error";
+			document.getElementById("access-control-status").textContent = "Error";
+			document.getElementById("compliance-status").textContent = "Error";
+		}
+	}
+
+	// Load security status when DOM is ready
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", loadSecurityStatus);
+	} else {
+		loadSecurityStatus();
+	}
+
 	// Chart instance variables scoped to this IIFE
 	let barChartInstance = null;
 	let scatterPlotInstance = null;
