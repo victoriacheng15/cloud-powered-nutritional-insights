@@ -110,5 +110,33 @@ def get_security_status():
     pass
 
 
+@app.route("/api/cleanup/list", methods=["GET"])
+@proxy_to_function_app(function_url, function_key)
+def get_cleanup_list():
+    """
+    Proxy endpoint to list resources in the resource group
+    Returns a list of all resources that can be deleted
+
+    Example: /api/cleanup/list
+    """
+    pass
+
+
+@app.route("/api/cleanup/delete", methods=["POST"])
+@proxy_to_function_app(function_url, function_key)
+def get_cleanup_delete():
+    """
+    Proxy endpoint to delete selected resources
+    
+    Request body:
+        {
+            "resource_ids": ["resource_id_1", "resource_id_2", ...]
+        }
+
+    Example: /api/cleanup/delete
+    """
+    pass
+
+
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
