@@ -93,5 +93,22 @@ def get_clusters():
     pass
 
 
+@app.route("/api/security-status")
+@proxy_to_function_app(function_url, function_key)
+def get_security_status():
+    """
+    Proxy endpoint to call Azure Function App security status
+    Returns the current security and compliance status
+
+    Returns:
+        - encryption: Encryption status (Enabled/Disabled)
+        - access_control: Access control status (Secure/Compromised)
+        - compliance: Compliance status (Compliant/Non-Compliant)
+
+    Example: /api/security-status
+    """
+    pass
+
+
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
