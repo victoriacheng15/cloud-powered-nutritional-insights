@@ -8,106 +8,83 @@ secure retrieval of security configuration.
 
 import os
 from datetime import datetime
-from typing import Dict, Any, Optional
-from azure.identity import DefaultAzureCredential
-from azure.keyvault.secrets import SecretClient
-from azure.core.exceptions import AzureError
-
-
-def get_key_vault_client() -> Optional[SecretClient]:
-    """
-    Initialize and return Azure Key Vault client.
-    
-    Returns:
-        Optional[SecretClient]: Key Vault client if configured, None otherwise
-    """
-    key_vault_name = os.getenv("KEY_VAULT_NAME")
-    
-    if not key_vault_name:
-        return None
-    
-    try:
-        vault_url = f"https://{key_vault_name}.vault.azure.net/"
-        credential = DefaultAzureCredential()
-        return SecretClient(vault_url=vault_url, credential=credential)
-    except AzureError as e:
-        print(f"Error connecting to Key Vault: {str(e)}")
-        return None
-
-
-def get_secret_from_vault(client: Optional[SecretClient], secret_name: str) -> Optional[str]:
-    """
-    Retrieve a secret from Azure Key Vault without fallback.
-    
-    Args:
-        client: SecretClient instance
-        secret_name: Name of the secret to retrieve
-        
-    Returns:
-        Optional[str]: Secret value or None if not found or client is None
-    """
-    if client is None:
-        return None
-    
-    try:
-        secret = client.get_secret(secret_name)
-        return secret.value
-    except AzureError as e:
-        print(f"Error retrieving secret {secret_name} from Key Vault: {str(e)}")
-        return None
-
-
+from typing import Dict, Any
+from .utils import get_keyvault_client
 
 
 def get_security_status() -> Dict[str, Any]:
     """
-    Get the current security status of the application from Azure Key Vault.
+    Get the current security status of the application.
+    
+    Checks:
+    1. Key Vault accessibility (encryption capability)
+    2. Storage account configuration (access control)
+    3. Required security environment variables (compliance)
     
     Returns a dictionary containing:
     - encryption: Encryption status (Enabled/Disabled)
     - access_control: Access control status (Secure/Compromised)
     - compliance: Compliance status (Compliant/Non-Compliant)
+    - timestamp: When the status was checked
+    - details: Additional security information
     
     Returns:
         Dict[str, Any]: Security status information
     """
     
-    # Initialize Key Vault client
-    kv_client = get_key_vault_client()
-    
-    # If Key Vault not configured, all statuses are "Disabled"
-    if kv_client is None:
+    try:
+        # Check Key Vault accessibility
+        kv_accessible = False
+        try:
+            client = get_keyvault_client()
+            # Try to list secrets to verify access
+            list(client.list_properties_of_secrets())
+            kv_accessible = True
+            print("[SECURITY] Key Vault is accessible")
+        except Exception as e:
+            print(f"[SECURITY] Key Vault not accessible: {str(e)}")
+        
+        # Check required environment variables
+        keyvault_url = os.getenv("AZURE_KEYVAULT_URL")
+        storage_connection = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+        
+        # Validate that connection string is not a placeholder
+        is_storage_valid = (
+            storage_connection 
+            and storage_connection != "DefaultEndpointsProtocol=https;AccountName=<storage-account>;AccountKey=<account-key>;EndpointSuffix=core.windows.net"
+        )
+        
+        # Determine encryption status (based on Key Vault availability)
+        encryption_status = "Enabled" if kv_accessible else "Disabled"
+        
+        # Determine access control status (based on storage configuration)
+        access_control_status = "Secure" if is_storage_valid else "Compromised"
+        
+        # Determine compliance status: all must be accessible and valid
+        compliance_status = "Compliant" if (kv_accessible and keyvault_url and is_storage_valid) else "Non-Compliant"
+        
         return {
-            "encryption": "Disabled",
-            "access_control": "Disabled",
-            "compliance": "Disabled"
+            "encryption": encryption_status,
+            "access_control": access_control_status,
+            "compliance": compliance_status,
+            "timestamp": datetime.utcnow().isoformat(),
+            "details": {
+                "keyvault_configured": bool(keyvault_url),
+                "keyvault_accessible": kv_accessible,
+                "storage_configured": is_storage_valid,
+                "security_check": "Completed"
+            }
         }
     
-    # Retrieve security settings from Key Vault
-    encryption_enabled_value = get_secret_from_vault(kv_client, "ENCRYPTION_ENABLED")
-    https_enforced_value = get_secret_from_vault(kv_client, "HTTPS_ENFORCED")
-    gdpr_compliant_value = get_secret_from_vault(kv_client, "GDPR_COMPLIANT")
-    
-    # If any critical setting is missing, treat as "Disabled"
-    encryption_status = (
-        "Enabled" if encryption_enabled_value and encryption_enabled_value.lower() == "true"
-        else "Disabled"
-    )
-    
-    access_control_status = (
-        "Secure" if https_enforced_value and https_enforced_value.lower() == "true"
-        else "Compromised" if https_enforced_value
-        else "Disabled"
-    )
-    
-    compliance_status = (
-        "Compliant" if gdpr_compliant_value and gdpr_compliant_value.lower() == "true"
-        else "Non-Compliant" if gdpr_compliant_value
-        else "Disabled"
-    )
-    
-    return {
-        "encryption": encryption_status,
-        "access_control": access_control_status,
-        "compliance": compliance_status
-    }
+    except Exception as e:
+        print(f"[SECURITY] Error during security check: {str(e)}")
+        return {
+            "encryption": "Unknown",
+            "access_control": "Unknown",
+            "compliance": "Non-Compliant",
+            "timestamp": datetime.utcnow().isoformat(),
+            "error": str(e),
+            "details": {
+                "security_check": "Failed"
+            }
+        }
