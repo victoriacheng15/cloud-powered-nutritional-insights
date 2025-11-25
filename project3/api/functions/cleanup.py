@@ -10,6 +10,7 @@ from typing import Dict, Any, List
 from datetime import datetime
 from azure.identity import DefaultAzureCredential
 from azure.mgmt.resource import ResourceManagementClient
+from .utils import get_secret_with_fallback
 
 
 def list_resources_in_group() -> Dict[str, Any]:
@@ -22,19 +23,23 @@ def list_resources_in_group() -> Dict[str, Any]:
     
     try:
         resource_group = os.getenv("AZURE_RESOURCE_GROUP", "school")
-        subscription_id = os.getenv("AZURE_SUBSCRIPTION_ID")
+        
+        # Try to get subscription ID from Key Vault first, then env var
+        subscription_id = get_secret_with_fallback(
+            "AZURE_SUBSCRIPTION_ID",
+            env_var_name="AZURE_SUBSCRIPTION_ID",
+            default=None
+        )
         
         print(f"[CLEANUP] Resource Group: {resource_group}")
         print(f"[CLEANUP] Subscription ID: {subscription_id}")
         
-        # If no subscription ID provided, try to get it from Azure CLI context
+        # If no subscription ID provided, raise error
         if not subscription_id:
-            print("[CLEANUP] No AZURE_SUBSCRIPTION_ID set, trying to use current Azure context")
-            # When using DefaultAzureCredential, it can work without subscription ID in some cases
-            # but we need it for ResourceManagementClient
+            print("[CLEANUP] No AZURE_SUBSCRIPTION_ID set in Key Vault or environment")
             raise ValueError(
-                "AZURE_SUBSCRIPTION_ID environment variable not set. "
-                "Set it in Function App settings or local .env file."
+                "AZURE_SUBSCRIPTION_ID not found in Key Vault or environment variable. "
+                "Set it in Key Vault as AZURE-SUBSCRIPTION-ID or as AZURE_SUBSCRIPTION_ID env var."
             )
         
         print(f"[CLEANUP] Listing resources in group: {resource_group}")
@@ -90,10 +95,15 @@ def delete_resources(resource_ids: List[str]) -> Dict[str, Any]:
         if not resource_ids:
             raise ValueError("No resources selected for deletion")
         
-        subscription_id = os.getenv("AZURE_SUBSCRIPTION_ID")
+        # Try to get subscription ID from Key Vault first, then env var
+        subscription_id = get_secret_with_fallback(
+            "AZURE_SUBSCRIPTION_ID",
+            env_var_name="AZURE_SUBSCRIPTION_ID",
+            default=None
+        )
         
         if not subscription_id:
-            raise ValueError("AZURE_SUBSCRIPTION_ID environment variable not set")
+            raise ValueError("AZURE_SUBSCRIPTION_ID not found in Key Vault or environment variable")
         
         print(f"[CLEANUP] Starting deletion of {len(resource_ids)} resources")
         
