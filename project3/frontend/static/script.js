@@ -17,7 +17,7 @@
 				throw new Error(`HTTP error! status: ${response.status}`);
 			}
 			const data = await response.json();
-			
+
 			// Update encryption status
 			const encryptionEl = document.getElementById("encryption-status");
 			if (encryptionEl) {
@@ -37,6 +37,13 @@
 			if (complianceEl) {
 				complianceEl.textContent = data.compliance;
 				complianceEl.className = `font-semibold ${statusColorMap[data.compliance] || "text-yellow-600"}`;
+			}
+			
+			// Update timestamp
+			const timestampEl = document.getElementById("security-timestamp");
+			if (timestampEl && data.timestamp) {
+				const date = String(data.timestamp).replace("T", " ").replace(/\.\d+/, "")
+				timestampEl.textContent = date + " UTC";
 			}
 		} catch (error) {
 			console.error("Error loading security status:", error);
