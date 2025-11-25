@@ -17,9 +17,15 @@ def proxy_to_function_app(function_app_url, function_app_key=None):
         def wrapper(*args, **kwargs):
             try:
                 # Get the endpoint name from the function
-                endpoint = func.__name__.replace("get_", "").replace("_", "-")
+                func_name = func.__name__.replace("get_", "")
+                
+                # Special case: for cleanup functions, replace underscores with slashes
+                if "cleanup" in func_name:
+                    endpoint = func_name.replace("_", "/")
+                else:
+                    # For other functions, replace underscores with hyphens
+                    endpoint = func_name.replace("_", "-")
 
-                # Build query string from request args
                 query_params = request.args.to_dict()
 
                 # Build URL
@@ -29,8 +35,11 @@ def proxy_to_function_app(function_app_url, function_app_key=None):
                 if function_app_key:
                     query_params["code"] = function_app_key
 
-                # Make request to Function App
-                response = requests.get(url, params=query_params, timeout=10)
+                # Make request to Function App - support both GET and POST
+                if request.method == "POST":
+                    response = requests.post(url, json=request.get_json(), params=query_params, timeout=10, headers=request.headers)
+                else:
+                    response = requests.get(url, params=query_params, timeout=10)
 
                 if response.status_code != 200:
                     return {

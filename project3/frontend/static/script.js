@@ -801,5 +801,157 @@
 		} else {
 			console.warn("Get Clusters button not found");
 		}
+
+		// Get the "Clean Up Resources" button
+		const cleanupButton = document.getElementById("cleanup-btn");
+		if (cleanupButton) {
+			cleanupButton.addEventListener("click", async function () {
+				try {
+					// Fetch list of resources
+					const response = await fetch("/api/cleanup/list");
+
+					
+					const data = await response.json();
+
+					if (data.status !== "success" || !data.resources) {
+						console.error("Error condition - status:", data.status, "has resources:", !!data.resources);
+						alert("Error fetching resources:\n" + (data.message || "Unknown error"));
+						return;
+					}
+
+					// Build resource list with checkboxes
+					let resourceHTML = `📋 Resources in Resource Group: ${data.resource_group}\n\n`;
+					resourceHTML += `Total Resources: ${data.count}\n\n`;
+					resourceHTML += "Select resources to delete:\n\n";
+
+					// Create a custom selection dialog
+					const container = document.createElement("div");
+					container.style.cssText = `
+						position: fixed;
+						top: 50%;
+						left: 50%;
+						transform: translate(-50%, -50%);
+						background: white;
+						border: 2px solid #333;
+						border-radius: 8px;
+						padding: 20px;
+						max-height: 80vh;
+						max-width: 500px;
+						overflow-y: auto;
+						z-index: 10000;
+						box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+					`;
+
+					let html = `
+						<h3 style="margin-top: 0; color: #d32f2f;">⚠️ Select Resources to Delete</h3>
+						<p style="color: #666; font-size: 14px;">Resource Group: <strong>${data.resource_group}</strong></p>
+						<p style="color: #666; font-size: 14px;">Total: ${data.count} resources</p>
+						<div style="border-top: 1px solid #ddd; padding-top: 10px; margin-top: 10px;">
+					`;
+
+					data.resources.forEach((resource, index) => {
+						const resourceName = resource.name;
+						const resourceType = resource.type.split("/").pop();
+						html += `
+							<label style="display: block; margin: 8px 0; cursor: pointer;">
+								<input type="checkbox" class="resource-checkbox" value="${resource.id}" style="margin-right: 8px;">
+								<strong>${resourceName}</strong>
+								<div style="color: #999; font-size: 12px; margin-left: 24px;">
+									Type: ${resourceType}<br/>
+									ID: ${resource.id.split("/").pop()}
+								</div>
+							</label>
+						`;
+					});
+
+					html += `
+						</div>
+						<div style="margin-top: 15px; display: flex; gap: 10px; justify-content: flex-end;">
+							<button id="cancel-btn" style="padding: 8px 16px; background: #ccc; border: none; border-radius: 4px; cursor: pointer;">Cancel</button>
+							<button id="delete-btn" style="padding: 8px 16px; background: #d32f2f; color: white; border: none; border-radius: 4px; cursor: pointer;">Delete Selected</button>
+						</div>
+					`;
+
+					container.innerHTML = html;
+					document.body.appendChild(container);
+
+					// Add overlay
+					const overlay = document.createElement("div");
+					overlay.style.cssText = `
+						position: fixed;
+						top: 0;
+						left: 0;
+						right: 0;
+						bottom: 0;
+						background: rgba(0,0,0,0.5);
+						z-index: 9999;
+					`;
+					document.body.appendChild(overlay);
+
+					// Cancel button
+					document.getElementById("cancel-btn").addEventListener("click", () => {
+						container.remove();
+						overlay.remove();
+					});
+
+					// Delete button
+					document.getElementById("delete-btn").addEventListener("click", async () => {
+						const selected = Array.from(
+							document.querySelectorAll(".resource-checkbox:checked")
+						).map(cb => cb.value);
+
+						if (selected.length === 0) {
+							alert("Please select at least one resource to delete.");
+							return;
+						}
+
+						const confirmed = confirm(
+							`Are you sure you want to delete ${selected.length} resource(s)?\n\nThis action cannot be undone.`
+						);
+
+						if (!confirmed) return;
+
+						// Show loading
+						document.getElementById("delete-btn").disabled = true;
+						document.getElementById("delete-btn").textContent = "Deleting...";
+
+						try {
+							const deleteResponse = await fetch("/api/cleanup/delete", {
+								method: "POST",
+								headers: {
+									"Content-Type": "application/json",
+									"X-Cleanup-Confirm": "confirmed"
+								},
+								body: JSON.stringify({ resource_ids: selected })
+							});
+
+							const deleteData = await deleteResponse.json();
+
+							let message = `Deletion Complete!\n\n`;
+							message += `Successfully deleted: ${deleteData.deleted_count}\n`;
+							if (deleteData.failed_count > 0) {
+								message += `Failed: ${deleteData.failed_count}\n\n`;
+								message += "Failed deletions:\n";
+								deleteData.failed_resources.forEach(failed => {
+									message += `- ${failed.resource_id}\n  Error: ${failed.error}\n`;
+								});
+							}
+
+							alert(message);
+							container.remove();
+							overlay.remove();
+						} catch (error) {
+							alert(`Error deleting resources: ${error.message}`);
+							document.getElementById("delete-btn").disabled = false;
+							document.getElementById("delete-btn").textContent = "Delete Selected";
+						}
+					});
+				} catch (error) {
+					alert(`Error fetching resources: ${error.message}`);
+				}
+			});
+		} else {
+			console.warn("Clean Up Resources button not found");
+		}
 	});
 })();
