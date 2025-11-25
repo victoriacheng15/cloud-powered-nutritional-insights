@@ -1,6 +1,7 @@
 import azure.functions as func
 import json
 import os
+from datetime import datetime
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -13,6 +14,7 @@ from functions import (
     get_clusters,
     get_security_status,
 )
+from functions.cleanup import list_resources_in_group, delete_resources
 
 app = func.FunctionApp()
 
@@ -110,4 +112,99 @@ def http_security_status(req: func.HttpRequest) -> func.HttpResponse:
     except Exception as e:
         return func.HttpResponse(
             json.dumps({"error": str(e)}), status_code=500, mimetype="application/json"
+        )
+
+
+@app.route(route="cleanup/list", methods=["GET"])
+def http_cleanup_list(req: func.HttpRequest) -> func.HttpResponse:
+    """
+    HTTP triggered function that lists all resources in the resource group.
+    
+    Returns:
+        - status: "success" or "error"
+        - resource_group: Name of the resource group
+        - resources: List of resources with id, name, type
+        - count: Total number of resources
+    """
+    try:
+        result = list_resources_in_group()
+        status_code = 200 if result["status"] == "success" else 500
+        return func.HttpResponse(
+            json.dumps(result),
+            status_code=status_code,
+            mimetype="application/json"
+        )
+    except Exception as e:
+        return func.HttpResponse(
+            json.dumps({
+                "status": "error",
+                "message": str(e),
+                "timestamp": datetime.utcnow().isoformat()
+            }),
+            status_code=500,
+            mimetype="application/json"
+        )
+
+
+@app.route(route="cleanup/delete", methods=["POST"])
+def http_cleanup_delete(req: func.HttpRequest) -> func.HttpResponse:
+    """
+    HTTP triggered function that deletes selected resources.
+    
+    Request body:
+        {
+            "resource_ids": ["resource_id_1", "resource_id_2", ...]
+        }
+    
+    Returns:
+        - status: "success", "partial", or "error"
+        - deleted_count: Number of successfully deleted resources
+        - failed_count: Number of failed deletions
+        - deleted_resources: List of successfully deleted resource IDs
+        - failed_resources: List of failed deletions with errors
+    """
+    try:
+        # Require confirmation header for safety
+        confirmation = req.headers.get("X-Cleanup-Confirm")
+        if confirmation != "confirmed":
+            return func.HttpResponse(
+                json.dumps({
+                    "status": "error",
+                    "message": "Deletion requires confirmation header: X-Cleanup-Confirm: confirmed",
+                    "timestamp": datetime.utcnow().isoformat()
+                }),
+                status_code=400,
+                mimetype="application/json"
+            )
+        
+        req_body = req.get_json()
+        resource_ids = req_body.get("resource_ids", [])
+        
+        if not resource_ids:
+            return func.HttpResponse(
+                json.dumps({
+                    "status": "error",
+                    "message": "No resources specified for deletion",
+                    "timestamp": datetime.utcnow().isoformat()
+                }),
+                status_code=400,
+                mimetype="application/json"
+            )
+        
+        result = delete_resources(resource_ids)
+        status_code = 200 if result["status"] in ["success", "partial"] else 500
+        return func.HttpResponse(
+            json.dumps(result),
+            status_code=status_code,
+            mimetype="application/json"
+        )
+    except Exception as e:
+        return func.HttpResponse(
+            json.dumps({
+                "status": "error",
+                "message": str(e),
+                "timestamp": datetime.utcnow().isoformat()
+            }),
+            status_code=500,
+            mimetype="application/json"
         )
