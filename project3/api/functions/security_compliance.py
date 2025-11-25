@@ -9,7 +9,7 @@ secure retrieval of security configuration.
 import os
 from datetime import datetime
 from typing import Dict, Any
-from .utils import get_keyvault_client
+from .utils import get_keyvault_client, get_secret_with_fallback
 
 
 def get_security_status() -> Dict[str, Any]:
@@ -46,7 +46,20 @@ def get_security_status() -> Dict[str, Any]:
         
         # Check required environment variables
         keyvault_url = os.getenv("AZURE_KEYVAULT_URL")
-        storage_connection = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+        
+        # Try to get storage connection string from Key Vault first, then fallback to env var
+        storage_connection = None
+        try:
+            print("[SECURITY] Attempting to retrieve AZURE_STORAGE_CONNECTION_STRING from Key Vault (will be converted to AZURE-STORAGE-CONNECTION-STRING)")
+            storage_connection = get_secret_with_fallback(
+                "AZURE_STORAGE_CONNECTION_STRING",
+                env_var_name="AZURE_STORAGE_CONNECTION_STRING",
+                default=None
+            )
+            print(f"[SECURITY] Successfully retrieved storage connection from Key Vault")
+        except Exception as e:
+            print(f"[SECURITY] Could not retrieve storage connection: {str(e)}")
+            storage_connection = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
         
         # Validate that connection string is not a placeholder
         is_storage_valid = (
