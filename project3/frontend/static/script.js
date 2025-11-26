@@ -1,5 +1,10 @@
 (function () {
-	// Security Status Color Mapping
+	/**
+	 * ============================================================================
+	 * SECURITY & COMPLIANCE FEATURES
+	 * ============================================================================
+	 */
+
 	const statusColorMap = {
 		"Enabled": "text-green-600",
 		"Disabled": "text-red-600",
@@ -9,47 +14,62 @@
 		"Non-Compliant": "text-red-600"
 	};
 
-	// Fetch and display security status on page load
+	// ============= SECURITY STATUS LAYER SEPARATION =============
+
+	// LOGIC LAYER - Pure data fetching
+	async function fetchSecurityStatus() {
+		const response = await fetch("/api/security-status");
+		if (!response.ok) {
+			throw new Error(`HTTP error! status: ${response.status}`);
+		}
+		return await response.json();
+	}
+
+	// UI LAYER - Pure DOM rendering
+	function renderSecurityStatus(data) {
+		// Update encryption status
+		const encryptionEl = document.getElementById("encryption-status");
+		if (encryptionEl) {
+			encryptionEl.textContent = data.encryption;
+			encryptionEl.className = `font-semibold ${statusColorMap[data.encryption] || "text-yellow-600"}`;
+		}
+		
+		// Update access control status
+		const accessControlEl = document.getElementById("access-control-status");
+		if (accessControlEl) {
+			accessControlEl.textContent = data.access_control;
+			accessControlEl.className = `font-semibold ${statusColorMap[data.access_control] || "text-yellow-600"}`;
+		}
+		
+		// Update compliance status
+		const complianceEl = document.getElementById("compliance-status");
+		if (complianceEl) {
+			complianceEl.textContent = data.compliance;
+			complianceEl.className = `font-semibold ${statusColorMap[data.compliance] || "text-yellow-600"}`;
+		}
+		
+		// Update timestamp
+		const timestampEl = document.getElementById("security-timestamp");
+		if (timestampEl && data.timestamp) {
+			const date = String(data.timestamp).replace("T", " ").replace(/\.\d+/, "")
+			timestampEl.textContent = date + " UTC";
+		}
+	}
+
+	// UI LAYER - Render error state
+	function renderSecurityStatusError() {
+		document.getElementById("encryption-status").textContent = "Error";
+		document.getElementById("access-control-status").textContent = "Error";
+		document.getElementById("compliance-status").textContent = "Error";
+	}
+
+	// ORCHESTRATION LAYER - Connects logic to UI
 	async function loadSecurityStatus() {
 		try {
-			const response = await fetch("/api/security-status");
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
-			const data = await response.json();
-
-			// Update encryption status
-			const encryptionEl = document.getElementById("encryption-status");
-			if (encryptionEl) {
-				encryptionEl.textContent = data.encryption;
-				encryptionEl.className = `font-semibold ${statusColorMap[data.encryption] || "text-yellow-600"}`;
-			}
-			
-			// Update access control status
-			const accessControlEl = document.getElementById("access-control-status");
-			if (accessControlEl) {
-				accessControlEl.textContent = data.access_control;
-				accessControlEl.className = `font-semibold ${statusColorMap[data.access_control] || "text-yellow-600"}`;
-			}
-			
-			// Update compliance status
-			const complianceEl = document.getElementById("compliance-status");
-			if (complianceEl) {
-				complianceEl.textContent = data.compliance;
-				complianceEl.className = `font-semibold ${statusColorMap[data.compliance] || "text-yellow-600"}`;
-			}
-			
-			// Update timestamp
-			const timestampEl = document.getElementById("security-timestamp");
-			if (timestampEl && data.timestamp) {
-				const date = String(data.timestamp).replace("T", " ").replace(/\.\d+/, "")
-				timestampEl.textContent = date + " UTC";
-			}
+			const data = await fetchSecurityStatus();
+			renderSecurityStatus(data);
 		} catch (error) {
-			// Set error state
-			document.getElementById("encryption-status").textContent = "Error";
-			document.getElementById("access-control-status").textContent = "Error";
-			document.getElementById("compliance-status").textContent = "Error";
+			renderSecurityStatusError();
 		}
 	}
 
@@ -60,7 +80,26 @@
 		loadSecurityStatus();
 	}
 
-	function setOAuthStatus(text, isError = false) {
+	/**
+	 * ============================================================================
+	 * AUTHENTICATION FEATURES (OAuth & 2FA)
+	 * ============================================================================
+	 */
+
+	// ============= OAUTH LAYER SEPARATION =============
+
+	// LOGIC LAYER - Pure data fetching
+	async function fetchOAuthUrl(provider) {
+		const response = await fetch(`/api/auth/oauth/login?provider=${provider}`);
+		const data = await response.json();
+		if (!response.ok || data.status !== "success") {
+			throw new Error(data.message || "Unable to build OAuth request");
+		}
+		return data;
+	}
+
+	// UI LAYER - Update OAuth status
+	function updateOAuthStatus(text, isError = false) {
 		const statusEl = document.getElementById("oauth-status");
 		if (!statusEl) return;
 		statusEl.textContent = text;
@@ -69,18 +108,20 @@
 			: "text-sm text-gray-600 mb-4";
 	}
 
+	// UI LAYER - Open OAuth window
+	function openOAuthWindow(authUrl) {
+		window.open(authUrl, "_blank");
+	}
+
+	// ORCHESTRATION LAYER - Connects logic to UI
 	async function initiateOAuth(provider) {
-		setOAuthStatus(`Requesting ${provider} login...`);
+		updateOAuthStatus(`Requesting ${provider} login...`);
 		try {
-			const response = await fetch(`/api/auth/oauth/login?provider=${provider}`);
-			const data = await response.json();
-			if (!response.ok || data.status !== "success") {
-				throw new Error(data.message || "Unable to build OAuth request");
-			}
-			window.open(data.auth_url, "_blank");
-			setOAuthStatus(`Opened ${provider} login flow.`);
+			const data = await fetchOAuthUrl(provider);
+			openOAuthWindow(data.auth_url);
+			updateOAuthStatus(`Opened ${provider} login flow.`);
 		} catch (error) {
-			setOAuthStatus(`OAuth error: ${error.message}`, true);
+			updateOAuthStatus(`OAuth error: ${error.message}`, true);
 		}
 	}
 
@@ -91,42 +132,78 @@
 		messageEl.className = success ? "mt-3 text-sm text-green-600" : "mt-3 text-sm text-red-600";
 	}
 
-	// Get 2FA token from localStorage
-	function get2FAToken() {
-		return localStorage.getItem("2fa_token");
+	// ============= 2FA SETUP LAYER SEPARATION =============
+
+	// LOGIC LAYER - Pure data fetching
+	async function fetchTwoFactorSecret(email) {
+		const response = await fetch("/api/auth/2fa-setup", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ email }),
+		});
+		const data = await response.json();
+		if (!response.ok || data.status !== "success") {
+			throw new Error(data.message || data.error || "Failed to generate 2FA secret");
+		}
+		return data;
 	}
 
-	// Clear 2FA token from localStorage
-	function clear2FAToken() {
-		localStorage.removeItem("2fa_token");
-		localStorage.removeItem("2fa_verified_at");
+	// UI LAYER - Display QR code
+	function renderQRCode(qrCodeData) {
+		const qrWrapper = document.getElementById("qr-wrapper");
+		const qrImage = document.getElementById("qr-image");
+		if (qrImage) {
+			qrImage.src = qrCodeData;
+		}
+		qrWrapper?.classList.remove("hidden");
 	}
 
+	// ORCHESTRATION LAYER - Connects logic to UI
 	async function handleTwoFactorSetup() {
 		const emailInput = document.getElementById("2fa-email");
 		const email = emailInput ? emailInput.value.trim() : "";
 		try {
-			const response = await fetch("/api/auth/2fa-setup", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ email }),
-			});
-			const data = await response.json();
-			if (!response.ok || data.status !== "success") {
-				throw new Error(data.message || data.error || "Failed to generate 2FA secret");
-			}
-			const qrWrapper = document.getElementById("qr-wrapper");
-			const qrImage = document.getElementById("qr-image");
-			if (qrImage) {
-				qrImage.src = data.qr_code;
-			}
-			qrWrapper?.classList.remove("hidden");
+			const data = await fetchTwoFactorSecret(email);
+			renderQRCode(data.qr_code);
 			displayTwoFactorMessage("Scan the QR code and enter the next code.", false);
 		} catch (error) {
 			displayTwoFactorMessage(`2FA setup error: ${error.message}`, false);
 		}
 	}
 
+	// ============= 2FA VERIFY LAYER SEPARATION =============
+
+	// LOGIC LAYER - Pure data fetching
+	async function fetchVerifyTwoFactorCode(code) {
+		const response = await fetch("/api/auth/2fa-verify", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ code }),
+		});
+		const data = await response.json();
+		if (!response.ok || data.status !== "success") {
+			throw new Error(data.message || "Invalid 2FA code");
+		}
+		return data;
+	}
+
+	// UI LAYER - Store 2FA token in localStorage
+	function storeTwoFactorToken(token) {
+		if (token) {
+			localStorage.setItem("2fa_token", token);
+			localStorage.setItem("2fa_verified_at", new Date().toISOString());
+		}
+	}
+
+	// UI LAYER - Clear 2FA code input
+	function clearTwoFactorInput() {
+		const codeInput = document.getElementById("2fa-code");
+		if (codeInput) {
+			codeInput.value = "";
+		}
+	}
+
+	// ORCHESTRATION LAYER - Connects logic to UI
 	async function handleTwoFactorVerify() {
 		const codeInput = document.getElementById("2fa-code");
 		const code = codeInput ? codeInput.value.trim() : "";
@@ -135,35 +212,35 @@
 			return;
 		}
 		try {
-			const response = await fetch("/api/auth/2fa-verify", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ code }),
-			});
-			const data = await response.json();
-			if (!response.ok || data.status !== "success") {
-				throw new Error(data.message || "Invalid 2FA code");
-			}
-			
-			// Store token in localStorage
-				if (data.token) {
-					localStorage.setItem("2fa_token", data.token);
-					localStorage.setItem("2fa_verified_at", new Date().toISOString());
-				}			displayTwoFactorMessage("2FA verified. Session token stored locally.", true);
-			
-			// Clear the code input
-			if (codeInput) codeInput.value = "";
+			const data = await fetchVerifyTwoFactorCode(code);
+			storeTwoFactorToken(data.token);
+			clearTwoFactorInput();
+			displayTwoFactorMessage("2FA verified. Session token stored locally.", true);
 		} catch (error) {
 			displayTwoFactorMessage(`2FA verification error: ${error.message}`, false);
 		}
 	}
+
+	/**
+	 * ============================================================================
+	 * DATA VISUALIZATION FEATURES (Charts & Heatmaps)
+	 * ============================================================================
+	 */
 
 	// Chart instance variables scoped to this IIFE
 	let barChartInstance = null;
 	let scatterPlotInstance = null;
 	let pieChartInstance = null;
 
-	// Render bar chart with nutritional data
+	// ============= BAR CHART LAYER SEPARATION =============
+	
+	// LOGIC LAYER - Pure data fetching
+	async function fetchNutritionalInsights(dietType = "all") {
+		const response = await fetch(`/api/nutritional-insights?diet_type=${dietType}`);
+		return await response.json();
+	}
+
+	// UI LAYER - Pure rendering (Bar Chart)
 	function renderBarChart(data) {
 		const ctx = document.getElementById("barChart").getContext("2d");
 
@@ -235,7 +312,7 @@
 		});
 	}
 
-	// Render scatter plot - showing relationship between protein and carbs
+	// UI LAYER - Pure rendering (Scatter Plot)
 	function renderScatterPlot(data) {
 		const ctx = document.getElementById("scatterPlot").getContext("2d");
 
@@ -319,7 +396,7 @@
 		});
 	}
 
-	// Render heatmap showing nutrient correlations
+	// UI LAYER - Pure rendering (Heatmap)
 	function renderHeatmap(data) {
 		const heatmapDiv = document.getElementById("heatmap");
 
@@ -411,7 +488,7 @@
 		heatmapDiv.appendChild(table);
 	}
 
-	// Render pie chart showing macronutrient distribution
+	// UI LAYER - Pure rendering (Pie Chart)
 	function renderPieChart(data) {
 		const ctx = document.getElementById("pieChart").getContext("2d");
 
@@ -482,28 +559,26 @@
 		});
 	}
 
+	// ORCHESTRATION LAYER - Connects logic to UI
 	async function getNutritionalInsights(dietType = "all") {
 		try {
-			const response = await fetch(
-				`/api/nutritional-insights?diet_type=${dietType}`,
-			);
-			const data = await response.json();
-
-			// Render the bar chart with the data
+			const data = await fetchNutritionalInsights(dietType);
 			renderBarChart(data);
-			// Render the scatter plot with the data
 			renderScatterPlot(data);
-			// Render the heatmap with the data
 			renderHeatmap(data);
-			// Render the pie chart with the data
 			renderPieChart(data);
-
 			return data;
 		} catch (error) {
+			// Handle error silently or could add error display here
 		}
 	}
 
-	// Fetch greeting from Flask backend (which will proxy to Function App)
+	/**
+	 * ============================================================================
+	 * DATA FETCHING FEATURES (Nutritional Insights & Greeting)
+	 * ============================================================================
+	 */
+
 	async function getGreeting() {
 		try {
 			const response = await fetch("/api/greeting?name=User");
@@ -513,7 +588,12 @@
 		}
 	}
 
-	// Display recipes in a table format
+	/**
+	 * ============================================================================
+	 * DATA DISPLAY FEATURES (Recipes & Clusters Tables)
+	 * ============================================================================
+	 */
+
 	function displayRecipes(data) {
 		// Get the h3 heading for recipes
 		const recipesHeading = document.getElementById("recipes-heading");
@@ -521,23 +601,32 @@
 		// Show the heading
 		recipesHeading.classList.remove("hidden");
 
-		// Clear any previous content after the heading
+		// Find existing recipes container or create new one
 		let recipesContainer = recipesHeading.nextElementSibling;
-		while (recipesContainer && recipesContainer.id !== "clusters-heading") {
+		
+		// Remove only existing recipe data containers (not the clusters section)
+		while (recipesContainer && 
+		       recipesContainer.id !== "clusters-heading" && 
+		       !recipesContainer.querySelector && 
+		       recipesContainer.tagName !== "SECTION" &&
+		       recipesContainer.tagName !== "FOOTER") {
 			const temp = recipesContainer;
 			recipesContainer = recipesContainer.nextElementSibling;
 			temp.remove();
 		}
-
-		// Create a new container for this batch of data
-		recipesContainer = document.createElement("div");
-		recipesContainer.className = "mb-8";
-
-		// Insert after recipes heading
-		recipesHeading.parentNode.insertBefore(
-			recipesContainer,
-			recipesHeading.nextSibling,
-		);
+		
+		// Re-get the next sibling after cleanup
+		recipesContainer = recipesHeading.nextElementSibling;
+		
+		// If it's a section or the heading, we went too far - create new container
+		if (!recipesContainer || recipesContainer.tagName === "SECTION" || recipesContainer.id === "clusters-heading") {
+			recipesContainer = document.createElement("div");
+			recipesContainer.className = "mb-8";
+			recipesHeading.parentNode.insertBefore(
+				recipesContainer,
+				recipesHeading.nextSibling,
+			);
+		}
 
 		// Check for errors
 		if (data.error) {
@@ -703,7 +792,6 @@
 		recipesContainer.appendChild(paginationDiv);
 	}
 
-	// Display clusters in a summary format
 	function displayClusters(data) {
 		// Get the h3 heading for clusters
 		const clustersHeading = document.getElementById("clusters-heading");
@@ -711,23 +799,32 @@
 		// Show the heading
 		clustersHeading.classList.remove("hidden");
 
-		// Clear any previous content after the heading
+		// Find existing clusters container or create new one
 		let clustersContainer = clustersHeading.nextElementSibling;
-		while (clustersContainer && clustersContainer.tagName !== "FOOTER") {
+		
+		// Remove only existing cluster data containers (not the Security section)
+		while (clustersContainer && 
+		       clustersContainer.id !== "recipes-heading" && 
+		       !clustersContainer.querySelector && 
+		       clustersContainer.tagName !== "SECTION" &&
+		       clustersContainer.tagName !== "FOOTER") {
 			const temp = clustersContainer;
 			clustersContainer = clustersContainer.nextElementSibling;
 			temp.remove();
 		}
-
-		// Create a new container for this batch of data
-		clustersContainer = document.createElement("div");
-		clustersContainer.className = "mb-8";
-
-		// Insert after clusters heading
-		clustersHeading.parentNode.insertBefore(
-			clustersContainer,
-			clustersHeading.nextSibling,
-		);
+		
+		// Re-get the next sibling after cleanup
+		clustersContainer = clustersHeading.nextElementSibling;
+		
+		// If it's a section or the heading, we went too far - create new container
+		if (!clustersContainer || clustersContainer.tagName === "SECTION" || clustersContainer.id === "recipes-heading") {
+			clustersContainer = document.createElement("div");
+			clustersContainer.className = "mb-8";
+			clustersHeading.parentNode.insertBefore(
+				clustersContainer,
+				clustersHeading.nextSibling,
+			);
+		}
 
 		// Check for errors
 		if (data.error) {
@@ -803,7 +900,12 @@
 		}
 	}
 
-	// Fetch clusters from Flask backend
+	/**
+	 * ============================================================================
+	 * API CALLS FEATURES (Recipes & Clusters Fetching)
+	 * ============================================================================
+	 */
+
 	async function getClusters(dietType = "all", numClusters = 3) {
 		try {
 			const response = await fetch(
@@ -820,7 +922,6 @@
 		}
 	}
 
-	// Fetch recipes from Flask backend
 	async function getRecipes(dietType = "all", page = 1, pageSize = 20) {
 		try {
 			const response = await fetch(
@@ -836,6 +937,12 @@
 			displayRecipes({ error: error.message, recipes: [], total_count: 0 });
 		}
 	}
+
+	/**
+	 * ============================================================================
+	 * EVENT HANDLERS & DOM INITIALIZATION
+	 * ============================================================================
+	 */
 
 	// Set up event listeners for buttons
 	document.addEventListener("DOMContentLoaded", async function () {
@@ -910,13 +1017,23 @@
 		// Get the "Clean Up Resources" button
 		const cleanupButton = document.getElementById("cleanup-btn");
 		if (cleanupButton) {
-			cleanupButton.addEventListener("click", async function () {
-				try {
-					// Fetch list of resources
-					const response = await fetch("/api/cleanup/list");
+			cleanupButton.addEventListener("click", handleCleanupResources);
+		}
+	});
 
-					
-					const data = await response.json();
+	/**
+	 * ============================================================================
+	 * RESOURCE CLEANUP FEATURE
+	 * ============================================================================
+	 */
+
+	async function handleCleanupResources() {
+		try {
+			// Fetch list of resources
+			const response = await fetch("/api/cleanup/list");
+
+			
+			const data = await response.json();
 
 					if (data.status !== "success" || !data.resources) {
 						alert("Error fetching resources:\n" + (data.message || "Unknown error"));
@@ -1053,7 +1170,5 @@
 				} catch (error) {
 					alert(`Error fetching resources: ${error.message}`);
 				}
-			});
-		}
-	});
+	}
 })();
