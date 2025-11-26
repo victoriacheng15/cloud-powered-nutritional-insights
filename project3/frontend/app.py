@@ -1,8 +1,8 @@
 import os
-import requests
 from flask import Flask, render_template, request, jsonify
 from dotenv import load_dotenv
 from utils import proxy_to_function_app
+import requests
 
 # Load environment variables from .env file
 load_dotenv()
@@ -15,18 +15,8 @@ app.debug = FLASK_ENV == "development"
 
 # Azure Function App URL - use environment variable with fallback to localhost
 FUNCTION_APP_URL = os.getenv("FUNCTION_APP_URL", "http://localhost:7071")
-# Azure Function App Key - for authentication
-FUNCTION_APP_KEY = os.getenv("FUNCTION_APP_KEY", "")
-
-# Determine if we should use function key (only in production)
-function_key = FUNCTION_APP_KEY if FLASK_ENV == "production" else None
-function_url = (
-    FUNCTION_APP_URL if FLASK_ENV == "production" else "http://localhost:7071"
-)
-
-print(f"🔧 FLASK_ENV: {FLASK_ENV}")
-print(f"🔧 FUNCTION_APP_URL: {function_url}")
-print(f"🔧 Debug mode: {app.debug}")
+# Azure Function App Key - for authentication (only in production)
+FUNCTION_APP_KEY = os.getenv("FUNCTION_APP_KEY", "") if FLASK_ENV == "production" else None
 
 
 @app.route("/")
@@ -35,7 +25,7 @@ def index():
 
 
 @app.route("/api/greeting")
-@proxy_to_function_app(function_url, function_key)
+@proxy_to_function_app(FUNCTION_APP_URL, FUNCTION_APP_KEY)
 def get_greeting():
     """
     Proxy endpoint to call Azure Function App greeting
@@ -44,7 +34,7 @@ def get_greeting():
 
 
 @app.route("/api/nutritional-insights")
-@proxy_to_function_app(function_url, function_key)
+@proxy_to_function_app(FUNCTION_APP_URL, FUNCTION_APP_KEY)
 def get_nutritional_insights():
     """
     Proxy endpoint to call Azure Function App nutritional insights
@@ -60,7 +50,7 @@ def get_nutritional_insights():
 
 
 @app.route("/api/recipes")
-@proxy_to_function_app(function_url, function_key)
+@proxy_to_function_app(FUNCTION_APP_URL, FUNCTION_APP_KEY)
 def get_recipes():
     """
     Proxy endpoint to call Azure Function App recipes
@@ -78,7 +68,7 @@ def get_recipes():
 
 
 @app.route("/api/clusters")
-@proxy_to_function_app(function_url, function_key)
+@proxy_to_function_app(FUNCTION_APP_URL, FUNCTION_APP_KEY)
 def get_clusters():
     """
     Proxy endpoint to call Azure Function App clusters
@@ -95,7 +85,7 @@ def get_clusters():
 
 
 @app.route("/api/security-status")
-@proxy_to_function_app(function_url, function_key)
+@proxy_to_function_app(FUNCTION_APP_URL, FUNCTION_APP_KEY)
 def get_security_status():
     """
     Proxy endpoint to call Azure Function App security status
@@ -112,7 +102,7 @@ def get_security_status():
 
 
 @app.route("/api/cleanup/list", methods=["GET"])
-@proxy_to_function_app(function_url, function_key)
+@proxy_to_function_app(FUNCTION_APP_URL, FUNCTION_APP_KEY)
 def get_cleanup_list():
     """
     Proxy endpoint to list resources in the resource group
@@ -124,7 +114,7 @@ def get_cleanup_list():
 
 
 @app.route("/api/cleanup/delete", methods=["POST"])
-@proxy_to_function_app(function_url, function_key)
+@proxy_to_function_app(FUNCTION_APP_URL, FUNCTION_APP_KEY)
 def get_cleanup_delete():
     """
     Proxy endpoint to delete selected resources
@@ -140,7 +130,7 @@ def get_cleanup_delete():
 
 
 @app.route("/api/auth/oauth/login")
-@proxy_to_function_app(function_url, function_key)
+@proxy_to_function_app(FUNCTION_APP_URL, FUNCTION_APP_KEY)
 def get_auth_oauth_login():
     """
     Proxy endpoint to initiate OAuth logins
@@ -155,7 +145,7 @@ def get_auth_oauth_login():
 def get_auth_oauth_callback():
     """
     Handle OAuth callback from provider
-    GitHub redirects here with authorization code and state
+    GitHub/Google redirects here with authorization code and state
 
     Query Parameters:
         - provider: oauth provider
@@ -171,7 +161,7 @@ def get_auth_oauth_callback():
             return jsonify({"error": "Missing authorization code"}), 400
         
         # Forward to Function App callback endpoint
-        url = f"{function_url}/api/auth/oauth/callback"
+        url = f"{FUNCTION_APP_URL}/api/auth/oauth/callback"
         params = {
             "provider": provider,
             "code": code,
@@ -189,7 +179,7 @@ def get_auth_oauth_callback():
 
 
 @app.route("/api/auth/2fa-setup", methods=["POST"])
-@proxy_to_function_app(function_url, function_key)
+@proxy_to_function_app(FUNCTION_APP_URL, FUNCTION_APP_KEY)
 def get_auth_2fa_setup():
     """
     Proxy endpoint to generate TOTP secrets and QR images
@@ -198,7 +188,7 @@ def get_auth_2fa_setup():
 
 
 @app.route("/api/auth/2fa-verify", methods=["POST"])
-@proxy_to_function_app(function_url, function_key)
+@proxy_to_function_app(FUNCTION_APP_URL, FUNCTION_APP_KEY)
 def get_auth_2fa_verify():
     """
     Proxy endpoint to verify submitted 2FA codes
