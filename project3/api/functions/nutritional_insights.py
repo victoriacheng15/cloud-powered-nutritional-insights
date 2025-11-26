@@ -1,3 +1,26 @@
+"""
+Nutritional Insights Module
+
+This module provides aggregated nutritional statistics for recipes grouped by diet type.
+It calculates mean, min, and max values for protein, carbs, and fat across recipe datasets,
+and returns unique cuisine types within each diet category.
+
+Statistics Provided:
+- Average, minimum, and maximum protein content (grams)
+- Average, minimum, and maximum carbs content (grams)
+- Average, minimum, and maximum fat content (grams)
+- List of unique cuisine types in the diet category
+- Total recipe count
+
+Supported Diet Types:
+- all (no filter)
+- vegan
+- keto
+- mediterranean
+- paleo
+- dash
+"""
+
 import json
 import os
 import pandas as pd

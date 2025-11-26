@@ -1,3 +1,20 @@
+"""
+Recipe Clustering Module
+
+This module provides K-means clustering functionality for grouping recipes based on
+their nutritional similarity (protein, carbs, fat). It generates descriptive labels
+for each cluster based on macronutrient profiles and returns cluster summaries with
+average nutritional values and sample recipes.
+
+Clustering Process:
+1. Load dataset filtered by diet type
+2. Extract protein, carbs, fat features
+3. Standardize features using StandardScaler
+4. Apply K-means clustering algorithm
+5. Generate descriptive labels based on macronutrient ratios
+6. Return cluster summaries with statistics and sample recipes
+"""
+
 import os
 import pandas as pd
 from pathlib import Path

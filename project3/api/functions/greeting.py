@@ -1,3 +1,10 @@
+"""
+Greeting Module
+
+This module provides a simple HTTP greeting endpoint that returns a personalized
+message with a timestamp. Used for testing API connectivity and basic functionality.
+"""
+
 import json
 from datetime import datetime
 

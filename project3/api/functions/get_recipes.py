@@ -1,6 +1,24 @@
-import os
-import pandas as pd
-from pathlib import Path
+"""
+Recipe Fetching Module
+
+This module provides paginated recipe data retrieval with filtering by diet type.
+It loads the nutritional dataset, applies diet-type filters, and returns paginated
+results with comprehensive metadata for frontend pagination controls.
+
+Supported Diet Types:
+- all (no filter)
+- vegan
+- keto
+- mediterranean
+- paleo
+- dash
+
+Pagination:
+- Configurable page size (default 20, max 100)
+- Returns pagination metadata (total_pages, has_next, has_previous)
+- Validates and adjusts invalid page numbers
+"""
+
 from .utils import load_dataset, filter_by_diet_type
 
 
