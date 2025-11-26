@@ -15,6 +15,12 @@ from functions import (
     get_security_status,
 )
 from functions.cleanup import list_resources_in_group, delete_resources
+from functions.auth import (
+    get_oauth_login_url,
+    handle_oauth_callback,
+    setup_two_factor,
+    verify_two_factor,
+)
 
 app = func.FunctionApp()
 
@@ -193,6 +199,89 @@ def http_cleanup_delete(req: func.HttpRequest) -> func.HttpResponse:
         
         result = delete_resources(resource_ids)
         status_code = 200 if result["status"] in ["success", "partial"] else 500
+        return func.HttpResponse(
+            json.dumps(result),
+            status_code=status_code,
+            mimetype="application/json"
+        )
+    except Exception as e:
+        return func.HttpResponse(
+            json.dumps({
+                "status": "error",
+                "message": str(e),
+                "timestamp": datetime.utcnow().isoformat()
+            }),
+            status_code=500,
+            mimetype="application/json"
+        )
+
+
+
+@app.route(route="auth/oauth/login", methods=["GET"])
+def http_auth_oauth_login(req: func.HttpRequest) -> func.HttpResponse:
+    provider = req.params.get("provider", "azure")
+    result = get_oauth_login_url(provider)
+    status_code = 200 if result.get("status") == "success" else 400
+    return func.HttpResponse(
+        json.dumps(result),
+        status_code=status_code,
+        mimetype="application/json"
+    )
+
+
+@app.route(route="auth/oauth/callback", methods=["GET"])
+def http_auth_oauth_callback(req: func.HttpRequest) -> func.HttpResponse:
+    provider = req.params.get("provider", "azure")
+    code = req.params.get("code")
+    state = req.params.get("state")
+    result = handle_oauth_callback(provider, code, state)
+    status_code = 200 if result.get("status") == "success" else 400
+    return func.HttpResponse(
+        json.dumps(result),
+        status_code=status_code,
+        mimetype="application/json"
+    )
+
+
+@app.route(route="auth/2fa-setup", methods=["POST"])
+def http_auth_two_factor_setup(req: func.HttpRequest) -> func.HttpResponse:
+    try:
+        try:
+            req_body = req.get_json()
+        except ValueError:
+            req_body = {}
+
+        email = req_body.get("email") if isinstance(req_body, dict) else None
+        result = setup_two_factor(email)
+        status_code = 200 if result.get("status") == "success" else 400
+        return func.HttpResponse(
+            json.dumps(result),
+            status_code=status_code,
+            mimetype="application/json"
+        )
+    except Exception as e:
+        return func.HttpResponse(
+            json.dumps({
+                "status": "error",
+                "message": str(e),
+                "timestamp": datetime.utcnow().isoformat()
+            }),
+            status_code=500,
+            mimetype="application/json"
+        )
+
+
+@app.route(route="auth/2fa-verify", methods=["POST"])
+def http_auth_two_factor_verify(req: func.HttpRequest) -> func.HttpResponse:
+    try:
+        try:
+            req_body = req.get_json()
+        except ValueError:
+            req_body = {}
+
+        code = req_body.get("code") if isinstance(req_body, dict) else None
+        result = verify_two_factor(code)
+        status_code = 200 if result.get("status") == "success" else 400
         return func.HttpResponse(
             json.dumps(result),
             status_code=status_code,
