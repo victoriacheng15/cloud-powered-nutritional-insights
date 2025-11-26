@@ -1,4 +1,5 @@
 import os
+import requests
 from flask import Flask, render_template, request, jsonify
 from dotenv import load_dotenv
 from utils import proxy_to_function_app
@@ -134,6 +135,73 @@ def get_cleanup_delete():
         }
 
     Example: /api/cleanup/delete
+    """
+    pass
+
+
+@app.route("/api/auth/oauth/login")
+@proxy_to_function_app(function_url, function_key)
+def get_auth_oauth_login():
+    """
+    Proxy endpoint to initiate OAuth logins
+
+    Query Parameters:
+        - provider: azure, google, or github
+    """
+    pass
+
+
+@app.route("/api/auth/oauth/callback")
+def get_auth_oauth_callback():
+    """
+    Handle OAuth callback from provider
+    GitHub redirects here with authorization code and state
+
+    Query Parameters:
+        - provider: oauth provider
+        - code: authorization code
+        - state: state value
+    """
+    try:
+        provider = request.args.get("provider", "github")
+        code = request.args.get("code")
+        state = request.args.get("state")
+        
+        if not code:
+            return jsonify({"error": "Missing authorization code"}), 400
+        
+        # Forward to Function App callback endpoint
+        url = f"{function_url}/api/auth/oauth/callback"
+        params = {
+            "provider": provider,
+            "code": code,
+            "state": state
+        }
+        
+        response = requests.get(url, params=params, timeout=10)
+        
+        if response.status_code != 200:
+            return jsonify({"error": f"Function App error: {response.text}"}), 500
+        
+        return jsonify(response.json())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/auth/2fa-setup", methods=["POST"])
+@proxy_to_function_app(function_url, function_key)
+def get_auth_2fa_setup():
+    """
+    Proxy endpoint to generate TOTP secrets and QR images
+    """
+    pass
+
+
+@app.route("/api/auth/2fa-verify", methods=["POST"])
+@proxy_to_function_app(function_url, function_key)
+def get_auth_2fa_verify():
+    """
+    Proxy endpoint to verify submitted 2FA codes
     """
     pass
 

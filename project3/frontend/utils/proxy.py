@@ -18,9 +18,12 @@ def proxy_to_function_app(function_app_url, function_app_key=None):
             try:
                 # Get the endpoint name from the function
                 func_name = func.__name__.replace("get_", "")
-                
-                # Special case: for cleanup functions, replace underscores with slashes
-                if "cleanup" in func_name:
+
+                # Special case: auth functions use slash-separated segments
+                if func_name.startswith("auth_"):
+                    endpoint = func_name.replace("_", "/")
+                # Special case: cleanup functions use slash-separated segments
+                elif "cleanup" in func_name:
                     endpoint = func_name.replace("_", "/")
                 else:
                     # For other functions, replace underscores with hyphens

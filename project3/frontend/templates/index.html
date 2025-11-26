@@ -95,12 +95,35 @@
             <h2 class="text-2xl font-semibold mb-4">OAuth & 2FA Integration</h2>
             <div class="bg-white p-4 shadow-lg rounded-lg">
                 <h3 class="font-semibold">Secure Login</h3>
-                <button class="bg-blue-600 text-white py-2 px-4 rounded mb-4">Login with Google</button>
-                <button class="bg-blue-600 text-white py-2 px-4 rounded mb-4">Login with GitHub</button>
-                <div class="mt-4">
-                    <label for="2fa" class="block text-sm text-gray-600">Enter 2FA Code (In Process)</label>
-                    <input id="2fa" type="text" class="p-2 border rounded w-full" placeholder="Enter your 2FA code" disabled>
+                <div class="grid grid-cols-1 gap-4 mb-4 w-1/2">
+                    <button id="oauth-google-btn" class="w-full bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700 font-semibold">Login with Google</button>
+                    <button id="oauth-github-btn" class="w-full bg-gray-800 text-white py-2 px-4 rounded hover:bg-gray-900 font-semibold">Login with GitHub</button>
                 </div>
+                <p id="oauth-status" class="text-sm text-gray-600 mb-4">Click a provider to open the OAuth login flow in a new window.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-1">
+                        <label for="2fa-email" class="block text-sm font-medium text-gray-700">2FA Recovery Email</label>
+                        <input id="2fa-email" type="email" class="mt-1 block w-full border border-gray-300 rounded px-3 py-2" placeholder="you@example.com">
+                        <button id="setup-2fa-btn" class="mt-3 w-full bg-gray-600 text-gray-100 font-semibold py-2 rounded hover:bg-amber-400">Generate 2FA QR Code</button>
+                    </div>
+                    <div class="md:col-span-1">
+                        <div id="qr-wrapper" class="hidden flex flex-col items-center gap-2 p-3 border border-dashed border-gray-300 rounded">
+                            <img id="qr-image" alt="2FA QR Code" class="w-40 h-40" src="" />
+                            <p class="text-xs text-gray-500 text-center">Scan the QR code with your authenticator app.</p>
+                        </div>
+                        <p id="qr-hint" class="text-xs text-gray-500">QR code will appear once 2FA setup finishes.</p>
+                    </div>
+                </div>
+                <div class="mt-5 grid grid-cols-1 gap-3 w-1/2">
+                    <div>
+                        <label for="2fa-code" class="text-sm text-gray-700">Enter 2FA Code</label>
+                        <input id="2fa-code" type="text" class="mt-1 block w-full border border-gray-300 rounded px-3 py-2" placeholder="123456">
+                    </div>
+                    <div class="flex items-end">
+                        <button id="verify-2fa-btn" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">Verify Code</button>
+                    </div>
+                </div>
+                <p id="2fa-message" class="mt-3 text-sm text-gray-600">After verification, you will receive a session token.</p>
             </div>
         </section>
 

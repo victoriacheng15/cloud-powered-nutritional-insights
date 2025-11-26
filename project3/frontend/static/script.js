@@ -61,6 +61,89 @@
 		loadSecurityStatus();
 	}
 
+	function setOAuthStatus(text, isError = false) {
+		const statusEl = document.getElementById("oauth-status");
+		if (!statusEl) return;
+		statusEl.textContent = text;
+		statusEl.className = isError
+			? "text-sm text-red-600 mb-4"
+			: "text-sm text-gray-600 mb-4";
+	}
+
+	async function initiateOAuth(provider) {
+		setOAuthStatus(`Requesting ${provider} login...`);
+		try {
+			const response = await fetch(`/api/auth/oauth/login?provider=${provider}`);
+			const data = await response.json();
+			if (!response.ok || data.status !== "success") {
+				throw new Error(data.message || "Unable to build OAuth request");
+			}
+			window.open(data.auth_url, "_blank");
+			setOAuthStatus(`Opened ${provider} login flow.`);
+		} catch (error) {
+			console.error("OAuth error", error);
+			setOAuthStatus(`OAuth error: ${error.message}`, true);
+		}
+	}
+
+	function displayTwoFactorMessage(text, success = false) {
+		const messageEl = document.getElementById("2fa-message");
+		if (!messageEl) return;
+		messageEl.textContent = text;
+		messageEl.className = success ? "mt-3 text-sm text-green-600" : "mt-3 text-sm text-red-600";
+	}
+
+	async function handleTwoFactorSetup() {
+		const emailInput = document.getElementById("2fa-email");
+		const email = emailInput ? emailInput.value.trim() : "";
+		try {
+			const response = await fetch("/api/auth/2fa-setup", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ email }),
+			});
+			const data = await response.json();
+			if (!response.ok || data.status !== "success") {
+				throw new Error(data.message || "Failed to generate 2FA secret");
+			}
+			const qrWrapper = document.getElementById("qr-wrapper");
+			const qrImage = document.getElementById("qr-image");
+			if (qrImage) {
+				qrImage.src = data.qr_code;
+			}
+			qrWrapper?.classList.remove("hidden");
+			displayTwoFactorMessage("Scan the QR code and enter the next code.", false);
+		} catch (error) {
+			console.error("Failed to set up 2FA", error);
+			displayTwoFactorMessage(`2FA setup error: ${error.message}`, false);
+		}
+	}
+
+	async function handleTwoFactorVerify() {
+		const codeInput = document.getElementById("2fa-code");
+		const code = codeInput ? codeInput.value.trim() : "";
+		if (!code) {
+			displayTwoFactorMessage("Enter the 2FA code from your authenticator.", false);
+			return;
+		}
+		try {
+			const response = await fetch("/api/auth/2fa-verify", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ code }),
+			});
+			const data = await response.json();
+			if (!response.ok || data.status !== "success") {
+				throw new Error(data.message || "Invalid 2FA code");
+			}
+			displayTwoFactorMessage("2FA verified. Session token stored locally.", true);
+			console.log("2FA token:", data.token);
+		} catch (error) {
+			console.error("2FA verification failed", error);
+			displayTwoFactorMessage(`2FA verification error: ${error.message}`, false);
+		}
+	}
+
 	// Chart instance variables scoped to this IIFE
 	let barChartInstance = null;
 	let scatterPlotInstance = null;
@@ -800,6 +883,25 @@
 			});
 		} else {
 			console.warn("Get Clusters button not found");
+		}
+
+		const googleOAuthBtn = document.getElementById("oauth-google-btn");
+		const githubOAuthBtn = document.getElementById("oauth-github-btn");
+		if (googleOAuthBtn) {
+			googleOAuthBtn.addEventListener("click", () => initiateOAuth("google"));
+		}
+		if (githubOAuthBtn) {
+			githubOAuthBtn.addEventListener("click", () => initiateOAuth("github"));
+		}
+
+		const setup2faButton = document.getElementById("setup-2fa-btn");
+		if (setup2faButton) {
+			setup2faButton.addEventListener("click", handleTwoFactorSetup);
+		}
+
+		const verify2faButton = document.getElementById("verify-2fa-btn");
+		if (verify2faButton) {
+			verify2faButton.addEventListener("click", handleTwoFactorVerify);
 		}
 
 		// Get the "Clean Up Resources" button
