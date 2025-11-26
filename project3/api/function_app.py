@@ -1,6 +1,5 @@
 import azure.functions as func
 import json
-import os
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -13,13 +12,12 @@ from functions import (
     get_recipes,
     get_clusters,
     get_security_status,
-)
-from functions.cleanup import list_resources_in_group, delete_resources
-from functions.auth import (
     get_oauth_login_url,
     handle_oauth_callback,
     setup_two_factor,
     verify_two_factor,
+    list_resources_in_group,
+    delete_resources,
 )
 
 app = func.FunctionApp()

@@ -1,4 +1,23 @@
-"""OAuth and 2FA helpers for the Nutritional Insights API."""
+"""
+OAuth and 2FA Authentication Module
+
+This module provides functions for OAuth 2.0 authentication (Google & GitHub) and
+Two-Factor Authentication (2FA) using TOTP. It integrates with Azure Key Vault for
+secure credential retrieval and generates JWT tokens for authenticated sessions.
+
+Supported OAuth Providers:
+- Google OAuth 2.0
+- GitHub OAuth 2.0
+
+Authentication Flow:
+1. Frontend requests OAuth URL via get_oauth_login_url()
+2. User authenticates with provider
+3. Provider redirects to callback with authorization code
+4. Backend exchanges code for JWT token via handle_oauth_callback()
+5. Frontend can then setup 2FA via setup_two_factor()
+6. User scans QR code and enters TOTP code
+7. Backend verifies code and issues session token via verify_two_factor()
+"""
 
 import base64
 import io
