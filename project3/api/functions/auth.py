@@ -85,7 +85,9 @@ def get_oauth_login_url(provider: str) -> Dict[str, Any]:
 
     config = OAUTH_PROVIDERS[provider]
     client_id = get_secret_with_fallback(
-        f"{provider.upper()}_OAUTH_CLIENT_ID", env_var_name=f"{provider.upper()}_OAUTH_CLIENT_ID", default=None
+        f"{provider.upper()}_OAUTH_CLIENT_ID",
+        env_var_name=f"{provider.upper()}_OAUTH_CLIENT_ID",
+        default=None,
     )
     redirect_uri = get_secret_with_fallback(
         "OAUTH_REDIRECT_URI", env_var_name="OAUTH_REDIRECT_URI", default=None
@@ -122,7 +124,9 @@ def get_oauth_login_url(provider: str) -> Dict[str, Any]:
     }
 
 
-def handle_oauth_callback(provider: str, code: Optional[str], state: Optional[str]) -> Dict[str, Any]:
+def handle_oauth_callback(
+    provider: str, code: Optional[str], state: Optional[str]
+) -> Dict[str, Any]:
     if not code:
         return {"status": "error", "message": "Missing authorization code."}
 
@@ -151,7 +155,9 @@ def setup_two_factor(email: Optional[str] = None) -> Dict[str, Any]:
         _twofa_store["email"] = user_email
 
         totp = pyotp.TOTP(secret)
-        provisioning_uri = totp.provisioning_uri(name=user_email, issuer_name=ISSUER_NAME)
+        provisioning_uri = totp.provisioning_uri(
+            name=user_email, issuer_name=ISSUER_NAME
+        )
 
         qr = qrcode.make(provisioning_uri)
         buffer = io.BytesIO()
