@@ -19,8 +19,13 @@ def proxy_to_function_app(function_app_url, function_app_key=None):
                 # Get the endpoint name from the function
                 func_name = func.__name__.replace("get_", "")
 
-                # Special case: auth functions use slash-separated segments
-                if func_name.startswith("auth_"):
+                # Special case: 2FA functions use hyphens (auth_2fa_setup -> auth/2fa-setup)
+                if "2fa" in func_name:
+                    # Split on the last underscore to separate "auth" from "2fa_setup"
+                    parts = func_name.split("_")
+                    endpoint = f"{parts[0]}/{func_name[len(parts[0])+1:].replace('_', '-')}"
+                # Special case: auth functions use slash-separated segments (auth_oauth_login -> auth/oauth/login)
+                elif func_name.startswith("auth_"):
                     endpoint = func_name.replace("_", "/")
                 # Special case: cleanup functions use slash-separated segments
                 elif "cleanup" in func_name:

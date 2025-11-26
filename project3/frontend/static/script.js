@@ -46,7 +46,6 @@
 				timestampEl.textContent = date + " UTC";
 			}
 		} catch (error) {
-			console.error("Error loading security status:", error);
 			// Set error state
 			document.getElementById("encryption-status").textContent = "Error";
 			document.getElementById("access-control-status").textContent = "Error";
@@ -81,7 +80,6 @@
 			window.open(data.auth_url, "_blank");
 			setOAuthStatus(`Opened ${provider} login flow.`);
 		} catch (error) {
-			console.error("OAuth error", error);
 			setOAuthStatus(`OAuth error: ${error.message}`, true);
 		}
 	}
@@ -91,6 +89,17 @@
 		if (!messageEl) return;
 		messageEl.textContent = text;
 		messageEl.className = success ? "mt-3 text-sm text-green-600" : "mt-3 text-sm text-red-600";
+	}
+
+	// Get 2FA token from localStorage
+	function get2FAToken() {
+		return localStorage.getItem("2fa_token");
+	}
+
+	// Clear 2FA token from localStorage
+	function clear2FAToken() {
+		localStorage.removeItem("2fa_token");
+		localStorage.removeItem("2fa_verified_at");
 	}
 
 	async function handleTwoFactorSetup() {
@@ -104,7 +113,7 @@
 			});
 			const data = await response.json();
 			if (!response.ok || data.status !== "success") {
-				throw new Error(data.message || "Failed to generate 2FA secret");
+				throw new Error(data.message || data.error || "Failed to generate 2FA secret");
 			}
 			const qrWrapper = document.getElementById("qr-wrapper");
 			const qrImage = document.getElementById("qr-image");
@@ -114,7 +123,6 @@
 			qrWrapper?.classList.remove("hidden");
 			displayTwoFactorMessage("Scan the QR code and enter the next code.", false);
 		} catch (error) {
-			console.error("Failed to set up 2FA", error);
 			displayTwoFactorMessage(`2FA setup error: ${error.message}`, false);
 		}
 	}
@@ -136,10 +144,16 @@
 			if (!response.ok || data.status !== "success") {
 				throw new Error(data.message || "Invalid 2FA code");
 			}
-			displayTwoFactorMessage("2FA verified. Session token stored locally.", true);
-			console.log("2FA token:", data.token);
+			
+			// Store token in localStorage
+				if (data.token) {
+					localStorage.setItem("2fa_token", data.token);
+					localStorage.setItem("2fa_verified_at", new Date().toISOString());
+				}			displayTwoFactorMessage("2FA verified. Session token stored locally.", true);
+			
+			// Clear the code input
+			if (codeInput) codeInput.value = "";
 		} catch (error) {
-			console.error("2FA verification failed", error);
 			displayTwoFactorMessage(`2FA verification error: ${error.message}`, false);
 		}
 	}
@@ -486,7 +500,6 @@
 
 			return data;
 		} catch (error) {
-			console.error("Error fetching nutritional insights:", error);
 		}
 	}
 
@@ -495,10 +508,8 @@
 		try {
 			const response = await fetch("/api/greeting?name=User");
 			const data = await response.json();
-			console.log("Greeting from Function App:", data);
 			return data;
 		} catch (error) {
-			console.error("Error fetching greeting:", error);
 		}
 	}
 
@@ -805,7 +816,6 @@
 
 			return data;
 		} catch (error) {
-			console.error("Error fetching clusters:", error);
 			displayClusters({ error: error.message, clusters: [], total_recipes: 0 });
 		}
 	}
@@ -823,7 +833,6 @@
 
 			return data;
 		} catch (error) {
-			console.error("Error fetching recipes:", error);
 			displayRecipes({ error: error.message, recipes: [], total_count: 0 });
 		}
 	}
@@ -849,8 +858,6 @@
 				const dietType = dietTypeSelect ? dietTypeSelect.value : "all";
 				await getNutritionalInsights(dietType);
 			});
-		} else {
-			console.warn("Get Nutritional Insights button not found");
 		}
 
 		// Get the "Get Recipes" button
@@ -865,8 +872,6 @@
 				const dietType = dietTypeSelect ? dietTypeSelect.value : "all";
 				await getRecipes(dietType, 1, 20);
 			});
-		} else {
-			console.warn("Get Recipes button not found");
 		}
 
 		// Get the "Get Clusters" button
@@ -881,8 +886,6 @@
 				const dietType = dietTypeSelect ? dietTypeSelect.value : "all";
 				await getClusters(dietType, 3);
 			});
-		} else {
-			console.warn("Get Clusters button not found");
 		}
 
 		const googleOAuthBtn = document.getElementById("oauth-google-btn");
@@ -916,7 +919,6 @@
 					const data = await response.json();
 
 					if (data.status !== "success" || !data.resources) {
-						console.error("Error condition - status:", data.status, "has resources:", !!data.resources);
 						alert("Error fetching resources:\n" + (data.message || "Unknown error"));
 						return;
 					}
@@ -1052,8 +1054,6 @@
 					alert(`Error fetching resources: ${error.message}`);
 				}
 			});
-		} else {
-			console.warn("Clean Up Resources button not found");
 		}
 	});
 })();

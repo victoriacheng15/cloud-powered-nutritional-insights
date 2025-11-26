@@ -78,9 +78,6 @@ def get_oauth_login_url(provider: str) -> Dict[str, Any]:
             "message": f"Missing OAuth configuration for {provider}.",
         }
 
-    print(f"DEBUG: {provider.upper()} Client ID: {client_id}")
-    print(f"DEBUG: Redirect URI: {redirect_uri}")
-
     state = _build_state()
     params = {
         "client_id": client_id,
@@ -97,8 +94,6 @@ def get_oauth_login_url(provider: str) -> Dict[str, Any]:
         params["allow_signup"] = "true"
 
     auth_url = f"{base_url}?{urlencode(params)}"
-
-    print(f"DEBUG: Full OAuth URL: {auth_url}")
 
     return {
         "status": "success",
@@ -130,26 +125,29 @@ def handle_oauth_callback(provider: str, code: Optional[str], state: Optional[st
 
 
 def setup_two_factor(email: Optional[str] = None) -> Dict[str, Any]:
-    user_email = (email or "user@example.com").strip()
-    secret = pyotp.random_base32()
-    _twofa_store["secret"] = secret
-    _twofa_store["email"] = user_email
+    try:
+        user_email = (email or "user@example.com").strip()
+        secret = pyotp.random_base32()
+        _twofa_store["secret"] = secret
+        _twofa_store["email"] = user_email
 
-    totp = pyotp.TOTP(secret)
-    provisioning_uri = totp.provisioning_uri(name=user_email, issuer_name=ISSUER_NAME)
+        totp = pyotp.TOTP(secret)
+        provisioning_uri = totp.provisioning_uri(name=user_email, issuer_name=ISSUER_NAME)
 
-    qr = qrcode.make(provisioning_uri)
-    buffer = io.BytesIO()
-    qr.save(buffer, format="PNG")
-    qr_data = base64.b64encode(buffer.getvalue()).decode()
+        qr = qrcode.make(provisioning_uri)
+        buffer = io.BytesIO()
+        qr.save(buffer, format="PNG")
+        qr_data = base64.b64encode(buffer.getvalue()).decode()
 
-    return {
-        "status": "success",
-        "email": user_email,
-        "secret": secret,
-        "qr_code": f"data:image/png;base64,{qr_data}",
-        "provisioning_uri": provisioning_uri,
-    }
+        return {
+            "status": "success",
+            "email": user_email,
+            "secret": secret,
+            "qr_code": f"data:image/png;base64,{qr_data}",
+            "provisioning_uri": provisioning_uri,
+        }
+    except Exception as e:
+        raise
 
 
 def verify_two_factor(code: Optional[str]) -> Dict[str, Any]:
