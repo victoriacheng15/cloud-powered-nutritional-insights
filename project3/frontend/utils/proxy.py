@@ -19,19 +19,14 @@ def proxy_to_function_app(function_app_url, function_app_key=None):
                 # Get the endpoint name from the function
                 func_name = func.__name__.replace("get_", "")
 
-                # Special case: 2FA functions use hyphens (auth_2fa_setup -> auth/2fa-setup)
-                if "2fa" in func_name:
-                    # Split on the last underscore to separate "auth" from "2fa_setup"
-                    parts = func_name.split("_")
-                    endpoint = f"{parts[0]}/{func_name[len(parts[0])+1:].replace('_', '-')}"
-                # Special case: auth functions use slash-separated segments (auth_oauth_login -> auth/oauth/login)
-                elif func_name.startswith("auth_"):
+                # Determine endpoint format based on function type
+                if func_name.startswith("auth_") or "cleanup" in func_name:
+                    # auth_oauth_login -> auth/oauth/login, cleanup_list -> cleanup/list
                     endpoint = func_name.replace("_", "/")
-                # Special case: cleanup functions use slash-separated segments
-                elif "cleanup" in func_name:
-                    endpoint = func_name.replace("_", "/")
+                    # Handle 2FA special case: auth/2fa_setup -> auth/2fa-setup
+                    endpoint = endpoint.replace("2fa_", "2fa-")
                 else:
-                    # For other functions, replace underscores with hyphens
+                    # nutritional_insights -> nutritional-insights
                     endpoint = func_name.replace("_", "-")
 
                 query_params = request.args.to_dict()

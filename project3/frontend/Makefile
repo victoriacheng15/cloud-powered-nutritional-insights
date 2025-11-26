@@ -5,7 +5,11 @@ help:
 	@echo "  make freeze        - Freeze current dependencies to requirements.txt"
 	@echo "  make install       - Install dependencies"
 	@echo "  make run           - Run Flask app"
+	@echo "  make format        - Format code with ruff"
+	@echo "  make js-format     - Format JavaScript with biomejs"
 	@echo "  make clean         - Remove __pycache__ and .pyc files"
+	@echo "  make docker-build  - Build Docker image"
+	@echo "  make docker-run    - Run Docker container locally"
 
 freeze:
 	pip freeze > requirements.txt
@@ -25,3 +29,9 @@ js-format:
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} +
 	find . -type f -name "*.pyc" -delete
+
+docker-build:
+	docker buildx build -t project3-nutritional-web:latest .
+
+docker-run:
+	docker run -it --rm -p 5000:5000 project3-nutritional-web:latest
